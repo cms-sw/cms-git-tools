@@ -201,11 +201,11 @@ if ( $len > 0 ) {
     if ( $checkout == 1 ) {
         chdir ($localtop);
         use File::Temp qw(tempfile);
-        my ($fh,$fname) = tempfile('./tmp/checkdepsXXXXX', UNLINK => 1);;
+        my ($fh,$fname) = tempfile($ENV{CMSSW_BASE} . '/tmp/checkdepsXXXXX', UNLINK => 1);;
         foreach my $pk (@t) {
-            print $fh "$pk\n";
+            print $fh "$pk/\n";
         }
-        system("cat $fname >> .git/info/sparse-checkouts; git read-tree -mu HEAD");
+        system("cd ".$ENV{CMSSW_BASE}."/src; cat $fname >> " . $ENV{CMSSW_BASE} . "/src/.git/info/sparse-checkout; git read-tree -mu $ENV{CMSSW_VERSION}");
         $exitcode+=$?;
         close($fh);
     }
