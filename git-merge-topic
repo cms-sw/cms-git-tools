@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ X$1 = X ]; then
+  echo Please specify a pull request id.
+  exit 1
+fi
+
+PULL_ID=$1
+
+git config --get-all remote.cmssw-main-ro.fetch | grep "refs/remotes/cmssw-main-ro/pr/*" >/dev/null || git config --add remote.cmssw-main-ro.fetch "+refs/pull/*/head:refs/remotes/cmssw-main-ro/pr/*"
+git fetch cmssw-main-ro
+git diff-index cmssw-main-ro/pr/$PULL_ID --name-only | cut -f1,2 -d/ | sort -u | xargs -n 1 git-addpkg
+git merge cmssw-main-ro/pr/$PULL_ID
