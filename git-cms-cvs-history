@@ -2,7 +2,7 @@
 from commands import getstatusoutput
 from optparse import OptionParser
 from sys import exit
-from os import environ
+from os import environ, chdir
 from os.path import exists, join
 import re
 
@@ -57,6 +57,8 @@ if __name__ == "__main__":
   cmssw_base = environ.get("CMSSW_BASE", None)
   if not cmssw_base:
     die("Please setup your CMSSW area")
+
+  chdir(join(cmssw_base, "src"))
 
   err, output = getstatusoutput(format("cd $CMSSW_BASE/src ; git init"))
   if err:
