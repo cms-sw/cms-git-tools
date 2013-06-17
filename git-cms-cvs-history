@@ -40,7 +40,7 @@ def findSymbol(tag, package):
   return tag
 
 if __name__ == "__main__":
-  parser = OptionParser(usage="git cms-cvs-history diff <cvs-tag>([..<tag>]| [HEAD]) SubSystem/Package]\n"
+  parser = OptionParser(usage="git cms-cvs-history diff <cvs-tag>[..<cvs-tag>] SubSystem/Package\n"
                               "                           import <cvs-tag> SubSystem/Package\n"
                               "                           tags SubSystem/Package\n"
                               "                           log SubSystem/Package")
