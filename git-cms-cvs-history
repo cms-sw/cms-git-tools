@@ -54,10 +54,10 @@ if __name__ == "__main__":
   if not command in ["diff", "import", "log", "tags"]:
     parser.error("`git cms-cvs-history' requires either `import`, `diff' or `log' sub-command")
   
-  if not environ["CMSSW_BASE"]:
+  cmssw_base = environ.get("CMSSW_BASE", None)
+  if not cmssw_base:
     die("Please setup your CMSSW area")
 
-  cmssw_base = environ["CMSSW_BASE"]
   err, output = getstatusoutput(format("cd $CMSSW_BASE/src ; git init"))
   if err:
     die("Error while setting up git repository")
