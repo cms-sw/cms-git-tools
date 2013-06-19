@@ -7,11 +7,12 @@ usage () {
   echo -e "-h, --help         \tthis help message"
   echo -e "-d, --debug        \tenable debug output"
   echo -e "-q, --quiet        \tdo not print out progress"
-  echo -e "-f, --froce        \tforce dangerous operations"
+  echo -e "-f, --force        \tforce dangerous operations"
   exit $1
 }
 
 VERBOSE=1
+FORCE=0
 
 verbose () {
   if [ "X$VERBOSE" = X1 ]; then
@@ -29,6 +30,8 @@ while [ "$#" != 0 ]; do
       shift; set -x ;;
     -q | --quiet )
       shift; set +x; VERBOSE=0 ;;
+    -f | --force )
+      shift; set +x; FORCE=1 ;;
     -*)
       echo Unknown option $1 ; usage 1 ;;
     *)
@@ -116,19 +119,20 @@ if [ ! -e $CMSSW_BASE/src/.git/refs/tags/$CMSSW_TAG ]; then
   echo "Unknown tag $CMSSW_TAG."
   if [ "X$VERBOSE" = X1 ]; then
     echo "Similar known tags in the repository are:"
-    git tag | grep `echo $CMSSW_VERSION | sed -e 's/\(CMSSW_[0-9]*_[0-9]*\).*/\1/'`
+    git tag | grep $CMSSW_BASE_BRANCH
   fi
   exit 1
 fi
 
 if [ ! -e $CMSSW_BASE/src/.git/cms-base-tag ]; then
+  git checkout ${CMSSW_BASE_BRANCH}_X
   git reset --hard $CMSSW_TAG
   echo $CMSSW_TAG > $CMSSW_BASE/src/.git/cms-base-tag
 fi
 if [ ! "X`cat $CMSSW_BASE/src/.git/cms-base-tag`" = X$CMSSW_TAG ]; then
-  verbose "This operation will merge in your area a vanilla $CMSSW_TAG, conflicts might occur."
-  if [ X$FORCE = X ]; then
-    verbose "Denying operation. Use -f, --force to force it."
+  verbose "This operation will merge in your area a vanilla $CMSSW_TAG."
+  if [ ! X$FORCE = X1 ]; then
+    verbose "Denying operation. Use -f, --force to force it, conflicts might occur."
     exit 1
   fi
 fi
