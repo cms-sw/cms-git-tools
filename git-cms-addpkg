@@ -48,6 +48,11 @@ while [ "$#" != 0 ]; do
   esac
 done
 
+if [ "X$CMSSW_BASE" = X ]; then
+  echo CMSSW environment not setup. Do cmsenv in some workarea.
+  exit 1
+fi
+
 if [ "X$PKG_NAME" = X ]; then
   echo "You need to specify at least one package." ; exit 1 
 fi
@@ -62,10 +67,6 @@ CMSSW_BASE_BRANCH=`echo $CMSSW_VERSION | sed -e 's/\(CMSSW_[0-9]\+_[0-9]\+\).*/\
 verbose You are on branch ${CMSSW_BASE_BRANCH}_X
 verbose Checking out $PKG_NAME in tag $CMSSW_TAG.
 
-if [ "X$CMSSW_BASE" = X ]; then
-  echo CMSSW environment not setup. Do cmsenv in some workarea.
-  exit 1
-fi
 
 IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
 if [ "X$IN_RELEASE" = X0 ]; then
