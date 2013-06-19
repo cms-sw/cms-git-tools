@@ -111,7 +111,7 @@ git config --get-all remote.cmssw-main.fetch | grep "refs/remotes/cmssw-main/*" 
 git config core.sparsecheckout true
 touch $CMSSW_BASE/src/.git/info/sparse-checkout
 cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
-echo "$PKG_NAME" | sed -e 's|[/]*$|/|' >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+echo "$PKG_NAME" | sed -e 's|[/]*$|/|;s|^/*|/|' >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
 cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout
 # If the tag does not exists, we fetch it.
 if [ ! -e $CMSSW_BASE/src/.git/refs/tags/$CMSSW_TAG ]; then
