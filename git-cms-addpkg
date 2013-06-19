@@ -1,24 +1,49 @@
-#!/bin/sh -ex
+#!/bin/sh -e
 # Mimics addpkg behavior in git.
-if [ $# -gt 2 ]; then
-  echo Too many arguments
-  exit 1
-fi
-if [ $# -lt 1 ]; then
-  echo Not enough arguments
-  exit 1
+usage () {
+  echo "git cms-addpkg [options] SubSystem/Package"
+  echo
+  echo "Options:"
+  echo -e "-h, --help         \tthis help message"
+  echo -e "-d, --debug        \tenable debug output"
+  exit $1
+}
+
+PKG_NAME=
+while [ "$#" != 0 ]; do
+  case "$1" in
+    -h | --help )
+      usage 0;;
+    -d | --debug )
+      shift; set -x ;;
+    -*)
+      echo Unknown option $1 ; usage 1 ;;
+    *)
+      if [ "X$PKG_NAME" = X ]; then
+        PKG_NAME=$1
+      else
+        echo "You can specify only one package at the time." ; exit 1
+      fi
+      shift 1
+    ;;
+  esac
+done
+
+if [ "X$PKG_NAME" = X ]; then
+  echo "You need to specify at least one package." ; exit 1 
 fi
 
-if [ "X$#" == X1 ]; then
-  CMSSW_TAG=$CMSSW_VERSION
-else
-  CMSSW_TAG=$2
-fi
-
+CMSSW_TAG=$CMSSW_VERSION
 PKG_NAME="$1"
 
 if [ "X$CMSSW_BASE" = X ]; then
   echo CMSSW environment not setup. Do cmsenv in some workarea.
+  exit 1
+fi
+
+IN_RELEASE=`echo $PWD | grep -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
+if [ "X$IN_RELEASE" = X0 ]; then
+  echo git cms-addpkg must be run from inside a CMSSW area.
   exit 1
 fi
 
