@@ -67,21 +67,21 @@ CMSSW_BASE_BRANCH=`echo $CMSSW_VERSION | sed -e 's/\(CMSSW_[0-9]\+_[0-9]\+\).*/\
 verbose You are on branch ${CMSSW_BASE_BRANCH}_X
 verbose Checking out $PKG_NAME in tag $CMSSW_TAG.
 
-
-IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
-if [ "X$IN_RELEASE" = X0 ]; then
-  OLD_CMSSW_BASE=$CMSSW_BASE
-  eval `scram run -sh` >/dev/null
-  IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
-  if [ "X$IN_RELEASE" = X0 ]; then
-    echo git cms-addpkg must be run from inside a CMSSW area.
-    exit 1
-  else
-    echo Error: You have currently set up the environment of $OLD_CMSSW_BASE, however you are running inside $CMSSW_BASE.
-    echo Please go inside $OLD_CMSSW_BASE, or use cmsenv to switch to $CMSSW_BASE.
-    exit 1
-  fi
-fi
+# This is not the case at FNAL. Disabling it for now.
+#IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
+#if [ "X$IN_RELEASE" = X0 ]; then
+#  OLD_CMSSW_BASE=$CMSSW_BASE
+#  eval `scram run -sh` >/dev/null
+#  IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
+#  if [ "X$IN_RELEASE" = X0 ]; then
+#    echo git cms-addpkg must be run from inside a CMSSW area.
+#    exit 1
+#  else
+#    echo Error: You have currently set up the environment of $OLD_CMSSW_BASE, however you are running inside $CMSSW_BASE.
+#    echo Please go inside $OLD_CMSSW_BASE, or use cmsenv to switch to $CMSSW_BASE.
+#    exit 1
+#  fi
+#fi
 
 if [ "X$CMSSW_GIT_REFERENCE" = X ]; then
   if [ -e /afs/cern.ch/cms/git-cmssw-mirror/cmssw.git ]; then
