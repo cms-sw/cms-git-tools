@@ -205,7 +205,7 @@ if ( $len > 0 ) {
         foreach my $pk (@t) {
             print $fh "$pk/\n";
         }
-        system("cd ".$ENV{CMSSW_BASE}."/src; cat $fname >> " . $ENV{CMSSW_BASE} . "/src/.git/info/sparse-checkout; git read-tree -mu $ENV{CMSSW_VERSION}");
+        system("cd $ENV{CMSSW_BASE}/src; cat $fname >> $ENV{CMSSW_BASE}/src/.git/info/sparse-checkout; git read-tree -mu `cat $ENV{CMSSW_BASE}/src/.git/cms-base-tag`");
         $exitcode+=$?;
         close($fh);
     }
