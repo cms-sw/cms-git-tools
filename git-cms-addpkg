@@ -97,7 +97,7 @@ if [ "X$CMSSW_GIT_REFERENCE" = X ]; then
 fi
 
 if [ ! -e $CMSSW_GIT_REFERENCE ]; then
-  read -p "Your cached git repository $CMSSW_GIT_REFERENCE does not seem to exist, would you like me to create it? [yN]"
+  read -p "Your reference git repository in CMSSW_GIT_REFERENCE=$CMSSW_GIT_REFERENCE does not seem to exist, would you like to create it? [yN] "
   
   case $REPLY in
     y|Y|yes|YES)
