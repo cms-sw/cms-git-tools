@@ -125,7 +125,6 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
 fi
 git config remote.cmssw-main.url https://github.com/cms-sw/cmssw.git
 git config remote.cmssw-main-pull.url https://github.com/cms-sw/cmssw.git
-git config --get-all remote.cmssw-main-pull.fetch | grep "refs/remotes/cmssw-main-pull/pr/*" >/dev/null || git config remote.cmssw-main-pull.fetch "+refs/pull/*/head:refs/remotes/cmssw-main-pull/pr/*"
 git config --get-all remote.cmssw-main.fetch | grep "refs/remotes/cmssw-main/*" >/dev/null || git config remote.cmssw-main.fetch "+refs/heads/*:refs/remotes/cmssw-main/*"
 git config core.sparsecheckout true
 touch $CMSSW_BASE/src/.git/info/sparse-checkout
