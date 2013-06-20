@@ -5,9 +5,9 @@ if [ X$1 = X ]; then
 fi
 
 PULL_ID=$1
-git cms-init
-git config --get-all remote.cmssw-main-ro.fetch | grep "refs/remotes/cmssw-main-ro/pr/*" >/dev/null || git config --add remote.cmssw-main-ro.fetch "+refs/pull/*/head:refs/remotes/cmssw-main-ro/pr/*"
-git fetch cmssw-main-ro
-git diff $CMSSW_VERSION..cmssw-main-ro/pr/$PULL_ID --name-only | cut -f1,2 -d/ | sort -u | xargs -r -n 1 git-addpkg
+git cms-addpkg FWCore/Version
+cd $CMSSW_BASE/src
+git fetch cmssw-main refs/pull/$PULL_ID/head:pr/$PULL_ID
+git diff $CMSSW_VERSION..pr/$PULL_ID --name-only | cut -f1,2 -d/ | sort -u | xargs -r -n 1 git cms-addpkg
 git reset --hard $CMSSW_VERSION
-git merge cmssw-main-ro/pr/$PULL_ID
+git merge pr/$PULL_ID
