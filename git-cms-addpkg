@@ -200,7 +200,7 @@ if [ ! -d $CMSSW_BASE/src/.git/refs/remotes/cms-official ]; then
   git fetch --tags cms-official 2> $VERBOSE_STREAM
 fi
 
-if [ ! -e $CMSSW_BASE/src/.git/refs/tags/$CMSSW_TAG ]; then
+if [ ! "X`git show-ref $CMSSW_TAG || true`"  = X ]; then
   echo "Unknown tag $CMSSW_TAG."
   if [ "X$VERBOSE" = X1 ]; then
     echo "Similar known tags in the repository are:"
