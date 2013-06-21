@@ -7,7 +7,7 @@ fi
 PULL_ID=$1
 git cms-addpkg FWCore/Version
 cd $CMSSW_BASE/src
-git fetch cmssw-main refs/pull/$PULL_ID/head:pr/$PULL_ID
+git fetch cms-official refs/pull/$PULL_ID/head:pr/$PULL_ID
 git diff $CMSSW_VERSION..pr/$PULL_ID --name-only | cut -f1,2 -d/ | sort -u | xargs -r -n 1 git cms-addpkg
 git reset --hard $CMSSW_VERSION
 git merge pr/$PULL_ID

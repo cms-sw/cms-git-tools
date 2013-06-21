@@ -151,8 +151,8 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
     echo $CMSSW_GIT_REFERENCE/objects > $CMSSW_BASE/src/.git/objects/info/alternates
   fi
 fi
-git config remote.cmssw-main.url https://github.com/cms-sw/cmssw.git
-git config --get-all remote.cmssw-main.fetch | grep "refs/remotes/cmssw-main/*" >/dev/null || git config remote.cmssw-main.fetch "+refs/heads/*:refs/remotes/cmssw-main/*"
+git config remote.cms-official.url https://github.com/cms-sw/cmssw.git
+git config --get-all remote.cms-official.fetch | grep "refs/remotes/cms-official/*" >/dev/null || git config remote.cms-official.fetch "+refs/heads/*:refs/remotes/cms-official/*"
 git config core.sparsecheckout true
 touch $CMSSW_BASE/src/.git/info/sparse-checkout
 cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
@@ -161,15 +161,15 @@ cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-c
 # If the tag does not exists, we fetch it.
 if [ ! -e $CMSSW_BASE/src/.git/refs/tags/$CMSSW_TAG ]; then
   if [ ! "X$CMSSW_MIRROR" = X ]; then
-    git remote set-url cmssw-main $CMSSW_MIRROR
+    git remote set-url cms-official $CMSSW_MIRROR
     git fetch --tags $CMSSW_MIRROR
-    git remote set-url cmssw-main https://github.com/cms-sw/cmssw.git
+    git remote set-url cms-official https://github.com/cms-sw/cmssw.git
   fi
 fi
 
-if [ ! -d $CMSSW_BASE/src/.git/refs/remotes/cmssw-main ]; then
-  git fetch cmssw-main 2> $VERBOSE_STREAM
-  git fetch --tags cmssw-main 2> $VERBOSE_STREAM
+if [ ! -d $CMSSW_BASE/src/.git/refs/remotes/cms-official ]; then
+  git fetch cms-official 2> $VERBOSE_STREAM
+  git fetch --tags cms-official 2> $VERBOSE_STREAM
 fi
 
 if [ ! -e $CMSSW_BASE/src/.git/refs/tags/$CMSSW_TAG ]; then
@@ -184,7 +184,7 @@ fi
 if [ ! -e $CMSSW_BASE/src/.git/cms-base-tag ]; then
   git reset --hard $CMSSW_TAG >/dev/null
   git checkout ${CMSSW_BASE_BRANCH}_X
-  git branch --set-upstream ${CMSSW_BASE_BRANCH}_X cmssw-main/${CMSSW_BASE_BRANCH}_X || true
+  git branch --set-upstream ${CMSSW_BASE_BRANCH}_X cms-official/${CMSSW_BASE_BRANCH}_X || true
   git reset --hard $CMSSW_TAG
   echo $CMSSW_TAG > $CMSSW_BASE/src/.git/cms-base-tag
 fi
