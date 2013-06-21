@@ -4,10 +4,11 @@ usage () {
   echo "git cms-addpkg [options] SubSystem/Package"
   echo
   echo "Options:"
-  echo -e "-h, --help         \tthis help message"
+  echo -e "-h                 \tthis help message"
   echo -e "-d, --debug        \tenable debug output"
   echo -e "-q, --quiet        \tdo not print out progress"
   echo -e "-f, --force        \tforce dangerous operations"
+  echo -e "-y, --yes          \tassume yes to all questions"
   exit $1
 }
 
@@ -31,6 +32,8 @@ while [ "$#" != 0 ]; do
       shift; set -x ;;
     -q | --quiet )
       shift; set +x; VERBOSE=0; VERBOSE_STREAM=/dev/null ;;
+    -y | --yes )
+      shift; ASSUME_YES=1 ;;
     -f | --force )
       shift; set +x; FORCE=1 ;;
     -*)
@@ -97,14 +100,39 @@ if [ "X$CMSSW_GIT_REFERENCE" = X ]; then
 fi
 
 if [ ! -e $CMSSW_GIT_REFERENCE ]; then
-  read -p "Your reference git repository in CMSSW_GIT_REFERENCE=$CMSSW_GIT_REFERENCE does not seem to exist, would you like to create it? [yN] "
-  
-  case $REPLY in
-    y|Y|yes|YES)
-      git clone --bare https://github.com/cms-sw/cmssw.git $CMSSW_GIT_REFERENCE
-      touch $CMSSW_GIT_REFERENCE/create-`whoami`
-    ;;
-  esac
+  while [ X$QUESTION_DONE = X ]; do
+    if [ X$ASSUME_YES = X ]; then
+      read -n 1 -p "Your reference git repository does not seem to exist, would you like to create it? [ y / N / ? ] "
+      QUESTION_DONE=1
+    else
+      REPLY=y
+      QUESTION_DONE=1
+    fi
+    case $REPLY in
+      y|Y|yes|YES)
+        git clone --bare https://github.com/cms-sw/cmssw.git $CMSSW_GIT_REFERENCE
+        touch $CMSSW_GIT_REFERENCE/create-`whoami`
+      ;;
+      [?])
+        echo
+        echo Answering yes will create a new cache directory in \$CMSSW_GIT_REFERENCE:
+        echo
+        echo i.e. $CMSSW_GIT_REFERENCE
+        echo
+        echo and put there a copy of the official CMSSW repository. git-cms-addpkg will then
+        echo reuse this information to keep your CMSSW workareas to a minimal size.
+        echo The initial checkout could take a few minutes, but all the others should then
+        echo take only a few seconds.
+        echo
+        echo Just say yes.
+        echo
+        QUESTION_DONE=
+      ;;
+      *)
+        CMSSW_GIT_REFERENCE=none
+      ;;
+    esac
+  done
 fi
 
 if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
