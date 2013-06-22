@@ -51,31 +51,33 @@ while [ "$#" != 0 ]; do
   esac
 done
 
-GITHUB_USERNAME="`git config --global --get cms.github.user || true`"
+GITHUB_USERNAME="`git config --global --get user.github || true`"
 if [ "X$GITHUB_USERNAME" = X ]; then
   echo "Cannot find your GitHub information."
   echo "Please register at"
   echo
   echo "https://github.com"
   echo
-  echo "and provide your username."
+  echo "and then configure git via:"
   echo
-  GITHUB_USERNAME=
-  while [ "X$GITHUB_USERNAME" = X ]; do 
-    read -p "What is your github username? "
-    GITHUB_USERNAME=`echo $REPLY | sed -e 's/[ \t]*//g'`
-    # It is intended to not have "" around $GITHUB_USERNAME
-    if [ "X$GITHUB_USERNAME" = X ]; then
-      echo "You provided an empty string."
-    fi
-  done
+  echo "git config --global user.github <your github username>"
+  exit 1
+fi
+USER_FULLNAME="`git config --global --get user.name || true`"
+if [ "X$USER_FULLNAME" = X ]; then
+  echo "Cannot find your name in git configuration."
+  echo "Please set it up via:"
   echo
-  echo "Hello, $GITHUB_USERNAME, I will remember you on this computer now."
+  echo "git config --global user.name <your name> <your last name>"
+  exit 1
+fi
+USER_EMAIL="`git config --global --get user.email || true`"
+if [ "X$USER_EMAIL" = X ]; then
+  echo "Cannot find your email in git configuration."
+  echo "Please set it up via:"
   echo
-  echo "At any time you can change your information by doing."
-  echo
-  echo "git config --global cms.github.user $GITHUB_USERNAME"
-  git config --global cms.github.user $GITHUB_USERNAME
+  echo "git config --global user.email <your e-mail>"
+  exit 1
 fi
 
 if [ "X$CMSSW_BASE" = X ]; then
