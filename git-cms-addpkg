@@ -80,13 +80,19 @@ if [ "X$USER_EMAIL" = X ]; then
   exit 1
 fi
 
-if [ "X$CMSSW_BASE" = X ]; then
-  echo CMSSW environment not setup. Do cmsenv in some workarea.
-  exit 1
-fi
 
 if [ "X$PKG_NAME" = X ]; then
   echo "You need to specify at least one package." ; exit 1 
+fi
+
+if [ "X$CMSSW_BASE" = X ]; then
+  if [ "X$CMSSW_TAG" = X ]; then
+    verbose CMSSW environment not setup. Do cmsenv in some workarea or specify tag to checkout.
+    exit 1
+  else
+    verbose Warning CMSSW environment not found. Checking out packages in $PWD/src.
+    CMSSW_BASE=$PWD
+  fi
 fi
 
 if [ "X$CMSSW_TAG" = X ]; then
@@ -94,7 +100,8 @@ if [ "X$CMSSW_TAG" = X ]; then
   CMSSW_TAG=$CMSSW_VERSION
 fi
 
-CMSSW_BASE_BRANCH=`echo $CMSSW_VERSION | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
+
+CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
 
 verbose You are on branch ${CMSSW_BASE_BRANCH}_X
 verbose Checking out $PKG_NAME in tag $CMSSW_TAG.
