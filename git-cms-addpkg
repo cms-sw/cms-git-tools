@@ -188,8 +188,8 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
     echo $CMSSW_GIT_REFERENCE/objects > $CMSSW_BASE/src/.git/objects/info/alternates
   fi
 fi
-git config remote.cms-official.url https://github.com/cms-sw/cmssw.git
-git config --get-all remote.cms-official.fetch | grep "refs/remotes/cms-official/*" >/dev/null || git config remote.cms-official.fetch "+refs/heads/*:refs/remotes/cms-official/*"
+git config remote.official-cmssw.url https://github.com/cms-sw/cmssw.git
+git config --get-all remote.official-cmssw.fetch | grep "refs/remotes/official-cmssw/*" >/dev/null || git config remote.official-cmssw.fetch "+refs/heads/*:refs/remotes/official-cmssw/*"
 git config core.sparsecheckout true
 touch $CMSSW_BASE/src/.git/info/sparse-checkout
 cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
@@ -198,15 +198,15 @@ cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-c
 # If the tag does not exists, we fetch it.
 if [ ! -e $CMSSW_BASE/src/.git/refs/tags/$CMSSW_TAG ]; then
   if [ ! "X$CMSSW_MIRROR" = X ]; then
-    git remote set-url cms-official $CMSSW_MIRROR
+    git remote set-url official-cmssw $CMSSW_MIRROR
     git fetch --tags $CMSSW_MIRROR
-    git remote set-url cms-official https://github.com/cms-sw/cmssw.git
+    git remote set-url official-cmssw https://github.com/cms-sw/cmssw.git
   fi
 fi
 
-if [ ! -d $CMSSW_BASE/src/.git/refs/remotes/cms-official ]; then
-  git fetch cms-official 2> $VERBOSE_STREAM
-  git fetch --tags cms-official 2> $VERBOSE_STREAM
+if [ ! -d $CMSSW_BASE/src/.git/refs/remotes/official-cmssw ]; then
+  git fetch official-cmssw 2> $VERBOSE_STREAM
+  git fetch --tags official-cmssw 2> $VERBOSE_STREAM
 fi
 
 cd $CMSSW_BASE/src
@@ -221,11 +221,11 @@ fi
 
 if [ "X`git symbolic-ref fork-point || true`" = X ]; then
   git reset --hard ${CMSSW_TAG} >/dev/null
-  git checkout -b from-$CMSSW_TAG cms-official/${CMSSW_BASE_BRANCH}_X
+  git checkout -b from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X
   git branch -D master
   git symbolic-ref fork-point $CMSSW_TAG
   git reset --hard $CMSSW_TAG
-  git branch --set-upstream from-$CMSSW_TAG cms-official/${CMSSW_BASE_BRANCH}_X 2>/dev/null || git branch --set-upstream-to=cms-official/${CMSSW_BASE_BRANCH}_X from-$CMSSW_TAG
+  git branch --set-upstream from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X 2>/dev/null || git branch --set-upstream-to=official-cmssw/${CMSSW_BASE_BRANCH}_X from-$CMSSW_TAG
 fi
 
 if [ ! "X`git symbolic-ref fork-point || true`" = "X$CMSSW_TAG" ]; then
