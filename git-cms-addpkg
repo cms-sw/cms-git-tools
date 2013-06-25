@@ -2,7 +2,7 @@
 # Mimics addpkg behavior in git.
 case `uname` in 
   Darwin) ECHO=echo ;;
-  *) ECHO=echo -e ;;
+  *) ECHO="echo -e" ;;
 esac
 usage () {
   echo "git cms-addpkg [options] SubSystem/Package"
