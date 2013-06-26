@@ -250,7 +250,13 @@ if [ ! "X`git symbolic-ref fork-point 2>/dev/null || true`" = "X$CMSSW_TAG" ]; t
 fi
 
 git read-tree -mu $CMSSW_TAG
-if [ ! -d $CMSSW_BASE/src/$PKG_NAME ]; then
-  echo "Error: package $PKG_NAME does not exist in tag $CMSSW_TAG."
-  exit 1
-fi
+case $PKG_NAME in 
+  *[*]* )
+  ;;
+  *)
+    if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
+      echo "Error: package $PKG_NAME does not exist in tag $CMSSW_TAG."
+      exit 1
+    fi
+  ;;
+esac
