@@ -1,0 +1,14 @@
+.TH GIT_CMS_CVS_HISTORY 1 LOCAL
+
+.SH NAME
+
+git-cms-cvs-history CMSSW helper to access CVS historical information.
+
+.SH SYNOPSIS
+
+.B git cms-cvs-history [options]
+
+.SH DESCRIPTION
+
+Git does not support per package tagging, therefore we added a tool to simply
+access that information from a standalone repository.

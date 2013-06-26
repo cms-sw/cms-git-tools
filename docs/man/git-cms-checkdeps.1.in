@@ -1,0 +1,23 @@
+.TH GIT_CMS_ADDPKG 1 LOCAL
+
+.SH NAME
+
+git-cms-checkdeps - CMSSW helper to checkout packages which depend on local modification of the workarea.
+
+.SH SYNOPSIS
+
+.B git cms-checkdeps [-a]
+
+.SH DESCRIPTION
+
+This is the git equivalent of the old CMS helper checkdeps which used to get the packages out of CVS.
+
+.SH OPTIONS
+
+By default it will only print out the packages to be checked out. Specify -a to actually checkout.
+
+.TP 5
+
+-a
+
+Do check out packages.
