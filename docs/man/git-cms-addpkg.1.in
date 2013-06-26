@@ -1,0 +1,51 @@
+.TH GIT_CMS_ADDPKG 1 LOCAL
+
+.SH NAME
+
+git-cms-addpkg - CMSSW helper to checkout single packages from the git repository.
+
+.SH SYNOPSIS
+
+.B git cms-addpkg [options] <package> [<tag>]
+
+.SH DESCRIPTION
+
+This is the git equivalent of the old CVS addpkg commant. <package> is the
+package you want to checkout (e.g. FWCore/Version), <tag> is the optional
+release tag which you want to checkout. By default it will use the tag used for
+the current release area.
+
+.SH OPTIONS
+
+The defaults should be just fine, however you can fine tune output of the
+command with the following options.
+
+.TP 5
+
+-d, --debug        
+
+enable debug output"
+
+.TP 5
+
+-f, --force
+
+force dangerous operations
+
+.TP 5
+
+--https
+
+use https, rather than ssh to access your personal repository
+
+.TP 5  
+
+-q, --quiet
+
+do not print out progress
+
+.TP 5
+
+-y, --yes
+
+assume yes to all questions
