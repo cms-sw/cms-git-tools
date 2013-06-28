@@ -132,7 +132,7 @@ verbose Checking out $PKG_NAME in tag $CMSSW_TAG.
 #fi
 
 if [ "X$CMSSW_GIT_REFERENCE" = X ]; then
-  case `hostname` in
+  case `hostname -f` in
     *.cern.ch)
       if [ -e /afs/cern.ch/cms/git-cmssw-mirror/cmssw.git ]; then
         CMSSW_GIT_REFERENCE=/afs/cern.ch/cms/git-cmssw-mirror/cmssw.git
