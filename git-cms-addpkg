@@ -13,7 +13,7 @@ usage () {
   $ECHO "-d, --debug        \tenable debug output"
   $ECHO "-f, --force        \tforce dangerous operations"
   $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
-  $ECHO "-q, --quiet        \tdo not print out progress"
+  $ECHO "-z, --quiet        \tdo not print out progress"
   $ECHO "-y, --yes          \tassume yes to all questions"
   exit $1
 }
