@@ -1,13 +1,22 @@
-.TH GIT_CMS_ADDPKG 1 LOCAL
+.TH GIT_CMS_MERGE_TOPIC 1 LOCAL
 
 .SH NAME
 
-git-cms-merge-topic - CMSSW helper to merge a given pull request into your workarea.
+git-cms-merge-topic - CMSSW helper to merge a given branch or pull request into your workarea.
 
 .SH SYNOPSIS
 
 .B git cms-merge-topic <pull-request-id>
 
+.B git cms-merge-topic <official-cmssw-branch>
+
+.B git cms-merge-topic <github-user>:<branch>
+
 .SH DESCRIPTION
 
 This is the git equivalent of the old CVS cmstc tagset <tagset-id> command.
+There are three different syntax, depending on wether you want to merge a pull
+request (specified via its numeric id, <pull-request-id>), a generic branch in
+the official-cmssw (https://github.com/cms-sw/cmssw) repository, or a branch in
+the repository of some other github user (specified by its github username,
+<github-user>).

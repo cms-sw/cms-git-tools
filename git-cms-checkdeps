@@ -138,7 +138,7 @@ foreach my $package (@packages) {
     next if ($package =~/^UserCode.*/o);
     my $reltag=$ENV{CMSSW_VERSION};
     print ">> Checking $package $reltag\n";
-    my $diffs=`git diff --name-status -r $reltag $package | sed -e 's/[ \t]\+/ /'`;
+    my $diffs=`git diff --name-status -r $reltag $package | grep -v .gitignore | sed -e 's/[ \t]\+/ /'`;
     my @diffs=split('\n',$diffs);
     my %msgs=("-" => {}, "x" => {});
     foreach my $diff (@diffs) {
@@ -205,7 +205,7 @@ if ( $len > 0 ) {
         foreach my $pk (@t) {
             print $fh "$pk/\n";
         }
-        system("cd $ENV{CMSSW_BASE}/src; cat $fname >> $ENV{CMSSW_BASE}/src/.git/info/sparse-checkout; git read-tree -mu `git symbolic-ref fork-point`");
+        system("cd $ENV{CMSSW_BASE}/src; cat $fname >> $ENV{CMSSW_BASE}/src/.git/info/sparse-checkout; git read-tree -mu HEAD");
         $exitcode+=$?;
         close($fh);
     }
