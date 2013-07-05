@@ -1,13 +1,91 @@
-#!/bin/sh -ex
-if [ X$1 = X ]; then
-  echo Please specify a pull request id.
+#!/bin/sh -e
+
+
+usage () {
+  
+  case `uname` in
+    Linux) ECHO="echo -e" ;;
+    *) ECHO="echo" ;;
+  esac
+  $ECHO "git cms-merge-topic [options] <github-user>:<branch>"
+  $ECHO "git cms-merge-topic [options] <official-cmssw-branch>"
+  $ECHO "git cms-merge-topic [options] <pull-request-id>"
+  $ECHO
+  $ECHO "Options:"
+  $ECHO
+  $ECHO "-q/--quiet            \tBe completely quiet"
+  $ECHO "-v/--verbose          \tShow verbose output"
+  $ECHO "-d/--debug            \tShow debug information"
   exit 1
+}
+
+while [ $# -gt 0 ]; do
+  case $1 in 
+    -v|--verbose)
+      NORMAL_STREAM=/dev/stdout
+      VERBOSE_STREAM=/dev/stdout
+      DEBUG_STREAM=/dev/null
+      shift
+      ;;
+    -q|--quiet)
+      NORMAL_STREAM=/dev/null
+      VERBOSE_STREAM=/dev/null
+      DEBUG_STREAM=/dev/null
+      shift
+      ;;
+    -d|--debug)
+      NORMAL_STREAM=/dev/stdout
+      VERBOSE_STREAM=/dev/stdout
+      DEBUG_STREAM=/dev/stdout
+      set -x
+      shift
+      ;;
+    -*)
+      echo "Unknown option $1" ; exit 1 ;;
+    *)
+      if [ ! X$BRANCH = X ]; then
+        echo "Unexpected extra argument $1" ; exit 1
+      fi
+      # Handle branch options:
+      #
+      # - Generic personal branch: `<user-name>:<branch-name>`
+      # - Generic cms-sw branch: `<branch-name>`
+      # - Pull request: `<pull-request-id>`
+      GITHUB_USER=cms-sw ; 
+      BRANCH=$1 ;
+      case $1 in
+        *:*)
+          BRANCH=`echo $1 | cut -f2 -d:`
+          GITHUB_USER=`echo $1 | cut -f1 -d:` ;;
+        [0-9]*) 
+          BRANCH=refs/pull/$1/head ;; 
+      esac ;
+      shift
+    ;;
+  esac
+done
+if [ X$BRANCH = X ]; then
+  usage
 fi
+
+DEBUG_STREAM=/dev/null
 
 PULL_ID=$1
 git cms-addpkg FWCore/Version
 cd $CMSSW_BASE/src
-git fetch official-cmssw refs/pull/$PULL_ID/head:pr/$PULL_ID
-git diff $CMSSW_VERSION..pr/$PULL_ID --name-only | cut -f1,2 -d/ | sort -u | xargs -r -n 1 git cms-addpkg
-git reset --hard $CMSSW_VERSION
-git merge pr/$PULL_ID
+# Fetch the branch specified from github and replace merge-attempt with it. 
+# The + is used to force the merge-attampt branch to be updated.
+git fetch . +HEAD:merge-attempt
+git fetch https://github.com/$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANCH
+# Save the name of the current branch.
+CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+# Attempt a merge in a separate branch
+git checkout merge-attempt >$DEBUG_STREAM
+git merge --no-ff -m "Merged $BRANCH from repository $GITHUB_USER" $GITHUB_USER/$BRANCH || { echo "Unable to merge branch $BRANCH from repository $GITHUB_USER." ; exit 1; }
+git checkout $CURRENT_BRANCH 
+# Add the missing packages.
+git diff $CURRENT_BRANCH..merge-attempt --name-only | grep -v ".gitconfig" | cut -f1,2 -d/ | sort -u | xargs -r -n 1 git cms-addpkg
+# This should always be a FF commit.
+git merge --ff merge-attempt >$DEBUG_STREAM 
+# Delete the branch used for merge
+git branch -D merge-attempt >$DEBUG_STREAM || true
