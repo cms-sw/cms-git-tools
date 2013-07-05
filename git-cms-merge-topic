@@ -84,7 +84,8 @@ git checkout merge-attempt >$DEBUG_STREAM
 git merge --no-ff -m "Merged $BRANCH from repository $GITHUB_USER" $GITHUB_USER/$BRANCH || { echo "Unable to merge branch $BRANCH from repository $GITHUB_USER." ; exit 1; }
 git checkout $CURRENT_BRANCH 
 # Add the missing packages.
-git diff $CURRENT_BRANCH..merge-attempt --name-only | grep -v ".gitconfig" | cut -f1,2 -d/ | sort -u | xargs -r -n 1 git cms-addpkg
+git cms-sparse-checkout $CURRENT_BRANCH merge-attempt
+git read-tree -mu HEAD
 # This should always be a FF commit.
 git merge --ff merge-attempt >$DEBUG_STREAM 
 # Delete the branch used for merge

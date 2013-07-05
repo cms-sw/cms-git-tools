@@ -1,0 +1,79 @@
+#!/bin/sh -e
+# Includes in .git/info/sparse-checkout a list of the packages
+# which are modified between TAG1 and TAG2
+case `uname` in 
+  Darwin) ECHO=echo ;;
+  *) ECHO="echo -e" ;;
+esac
+usage () {
+  echo "git cms-sparse-checkout [options] TAG1 TAG2"
+  echo
+  echo "Options:"
+  $ECHO "-h                 \tthis help message"
+  $ECHO
+  $ECHO "-d, --debug        \tenable debug output"
+  $ECHO "-f, --force        \tforce dangerous operations"
+  $ECHO "-z, --quiet        \tdo not print out progress"
+  exit $1
+}
+
+NORMAL_STREAM=/dev/stdout
+VERBOSE_STREAM=/dev/stdout
+DEBUG_STREAM=/dev/null
+
+verbose () {
+  if [ "X$VERBOSE" = X1 ]; then
+    echo "$@"
+  fi
+}
+
+REF1=
+REF2=
+while [ "$#" != 0 ]; do
+  case "$1" in
+    -h | --help )
+      usage 0;;
+    -v|--verbose)
+      NORMAL_STREAM=/dev/stdout
+      VERBOSE_STREAM=/dev/stdout
+      DEBUG_STREAM=/dev/null
+      shift
+      ;;
+    -q|--quiet)
+      NORMAL_STREAM=/dev/null
+      VERBOSE_STREAM=/dev/null
+      DEBUG_STREAM=/dev/null
+      shift
+      ;;
+    -d|--debug)
+      NORMAL_STREAM=/dev/stdout
+      VERBOSE_STREAM=/dev/stdout
+      DEBUG_STREAM=/dev/stdout
+      set -x
+      shift
+      ;;
+    -*)
+      echo Unknown option $1 ; usage 1 ;;
+    *)
+      if [ "X$REF1" = X ]; then
+        REF1=$1
+      elif [ "X$CMSSW_TAG" = X ]; then
+        REF2=$1
+      else
+        echo "Too many tags / branches specified." ; exit 1
+      fi
+      shift 1
+    ;;
+  esac
+done
+
+git config core.sparsecheckout true
+INFO_DIR=`git rev-parse --show-toplevel`/.git/info/
+touch $INFO_DIR/sparse-checkout
+cp -f $INFO_DIR/sparse-checkout $INFO_DIR/sparse-checkout-new
+
+for x in `git diff $REF1..$REF2 --name-only | grep -v ".gitconfig" | cut -f1,2 -d/ | sort -u`; do
+  echo "$x" | sed -e 's|[/]*$|/|;s|^/*|/|' >> $INFO_DIR/sparse-checkout-new
+done
+
+cat $INFO_DIR/sparse-checkout-new | sort -u > $INFO_DIR/sparse-checkout
