@@ -249,7 +249,7 @@ if [ ! "X`git symbolic-ref fork-point 2>/dev/null || true`" = "X$CMSSW_TAG" ]; t
   fi
 fi
 
-git read-tree -mu $CMSSW_TAG
+git read-tree -mu HEAD
 case $PKG_NAME in 
   *[*]* )
   ;;
