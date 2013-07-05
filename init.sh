@@ -1,0 +1,3 @@
+CURRENT_PATH=$PWD/`dirname $0`
+export PATH=$CURRENT_PATH:$PATH
+export MANPATH=$CURRENT_PATH/docs/man:$MANPATH
