@@ -1,23 +1,76 @@
-.TH GIT_CMS_ADDPKG 1 LOCAL
+.TH GIT_CMS_CHECKDEPS 1 LOCAL
 
 .SH NAME
 
-git-cms-checkdeps - CMSSW helper to checkout packages which depend on local modification of the workarea.
+git-cms-checkdeps - CMSSW helper to checkout packages which need to be recompiled after some change
 
 .SH SYNOPSIS
 
-.B git cms-checkdeps [-a]
+.B git cms-checkdeps [options] 
 
 .SH DESCRIPTION
 
-This is the git equivalent of the old CMS helper checkdeps which used to get the packages out of CVS.
+Utility to check your local development area against the CMSSW release.
+Any modified header files or python modules are found and the package
+dependencies of these files will be returned. addpkg-ing these packages
+and rebuilding them should provide a full and consistent build.
 
 .SH OPTIONS
 
-By default it will only print out the packages to be checked out. Specify -a to actually checkout.
+Notice that by default it will not checkout anything, use -a option to do so.
 
 .TP 5
 
--a
+-p 
 
-Do check out packages.
+look for python modules and their dependencies  (ON by default)
+
+.TP 5
+
+-h 
+
+look for header files and their dependencies    (ON by default)
+
+.TP 5
+
+-b 
+
+look for BuildFile files and their dependencies (OFF by default)
+
+.TP 5
+
+-f 
+
+print name of changed file name instead of type of dependency (OFF by default)
+
+.TP 5
+
+-a 
+
+will add/checkout the packages into your development area (OFF by default)
+
+.TP 5
+
+-A 
+
+will check all dependencies i.e. header (-h), python(-p) and BuildFile(-b)
+
+.TP 5
+
+-d
+
+do not create dummy copy of deleted files in poison directory. Dummy copies
+are useful to find out if deleted headers files are included by other source files.
+
+.TP 5
+
+-D
+
+only dummy copy of deleted files in poison directory created.
+NOTE: all other dependency check/add command-line args are ignored.
+
+.TP 5
+
+-q
+
+will pass -Q option to cvs to make it quiet
