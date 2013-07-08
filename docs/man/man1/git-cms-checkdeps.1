@@ -1,30 +1,82 @@
-GIT_CMS_ADDPKG(1)                                            GIT_CMS_ADDPKG(1)
+GIT_CMS_CHECKDEPS(1)                                      GIT_CMS_CHECKDEPS(1)
 
 
 
 NNAAMMEE
-       git-cms-checkdeps  -  CMSSW helper to checkout packages which depend on
-       local modification of the workarea.
+       git-cms-checkdeps  - CMSSW helper to checkout packages which need to be
+       recompiled after some change
 
 
 SSYYNNOOPPSSIISS
-       ggiitt ccmmss--cchheecckkddeeppss [[--aa]]
+       ggiitt ccmmss--cchheecckkddeeppss [[ooppttiioonnss]]
 
 
 DDEESSCCRRIIPPTTIIOONN
-       This is the git equivalent of the old CMS helper checkdeps  which  used
-       to get the packages out of CVS.
+       Utility to check your local development area against the CMSSW release.
+       Any  modified  header files or python modules are found and the package
+       dependencies of these files will be returned. addpkg-ing these packages
+       and rebuilding them should provide a full and consistent build.
 
 
 OOPPTTIIOONNSS
-       By default it will only print out the packages to be checked out. Spec-
-       ify -a to actually checkout.
+       Notice  that by default it will not checkout anything, use -a option to
+       do so.
 
 
 
 
-            -a    Do check out packages.
+            -p    look for python  modules  and  their  dependencies   (ON  by
+            default)
 
 
 
-                                     LOCAL                   GIT_CMS_ADDPKG(1)
+
+            -h     look  for  header  files  and  their dependencies    (ON by
+            default)
+
+
+
+
+            -b    look for BuildFile files  and  their  dependencies  (OFF  by
+            default)
+
+
+
+
+            -f     print  name  of changed file name instead of type of depen-
+            dency (OFF by default)
+
+
+
+
+            -a    will add/checkout the packages into  your  development  area
+            (OFF by default)
+
+
+
+
+            -A    will check all dependencies i.e. header (-h), python(-p) and
+            BuildFile(-b)
+
+
+
+
+            -d    do not create dummy copy of deleted files in  poison  direc-
+            tory. Dummy copies are useful to find out if deleted headers files
+            are included by other source files.
+
+
+
+
+            -D    only dummy copy of deleted files in  poison  directory  cre-
+            ated.   NOTE: all other dependency check/add command-line args are
+            ignored.
+
+
+
+
+            -q    will pass -Q option to cvs to make it quiet
+
+
+
+                                     LOCAL                GIT_CMS_CHECKDEPS(1)
