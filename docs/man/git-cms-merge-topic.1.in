@@ -12,6 +12,14 @@ git-cms-merge-topic - CMSSW helper to merge a given branch or pull request into 
 
 .B git cms-merge-topic <github-user>:<branch>
 
+.SH OPTIONS
+
+.TP 5
+
+-u, --unsafe
+
+Do not perform checkdeps at the end of the checkout.
+
 .SH DESCRIPTION
 
 This is the git equivalent of the old CVS cmstc tagset <tagset-id> command.

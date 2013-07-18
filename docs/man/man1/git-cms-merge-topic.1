@@ -3,25 +3,31 @@ GIT_CMS_MERGE_TOPIC(1)                                  GIT_CMS_MERGE_TOPIC(1)
 
 
 NNAAMMEE
-       git-cms-merge-topic  -  CMSSW  helper  to  merge a given branch or pull
+       git‐cms‐merge‐topic  ‐  CMSSW  helper  to  merge a given branch or pull
        request into your workarea.
 
 
 SSYYNNOOPPSSIISS
-       ggiitt ccmmss--mmeerrggee--ttooppiicc <<ppuullll--rreeqquueesstt--iidd>>
+       ggiitt ccmmss‐‐mmeerrggee‐‐ttooppiicc <<ppuullll‐‐rreeqquueesstt‐‐iidd>>
 
-       ggiitt ccmmss--mmeerrggee--ttooppiicc <<ooffffiicciiaall--ccmmssssww--bbrraanncchh>>
+       ggiitt ccmmss‐‐mmeerrggee‐‐ttooppiicc <<ooffffiicciiaall‐‐ccmmssssww‐‐bbrraanncchh>>
 
-       ggiitt ccmmss--mmeerrggee--ttooppiicc <<ggiitthhuubb--uusseerr>>::<<bbrraanncchh>>
+       ggiitt ccmmss‐‐mmeerrggee‐‐ttooppiicc <<ggiitthhuubb‐‐uusseerr>>::<<bbrraanncchh>>
+
+
+OOPPTTIIOONNSS
+       ‐u, ‐‐unsafe
+
+            Do not perform checkdeps at the end of the checkout.
 
 
 DDEESSCCRRIIPPTTIIOONN
-       This is the git equivalent of the old CVS cmstc tagset <tagset-id> com-
+       This is the git equivalent of the old CVS cmstc tagset <tagset‐id> com‐
        mand.   There  are three different syntax, depending on wether you want
-       to merge a pull request (specified via its numeric  id,  <pull-request-
-       id>),  a  generic branch in the official-cmssw (https://github.com/cms-
+       to merge a pull request (specified via its numeric  id,  <pull‐request‐
+       id>),  a  generic branch in the official‐cmssw (https://github.com/cms‐
        sw/cmssw) repository, or a branch  in  the  repository  of  some  other
-       github user (specified by its github username, <github-user).
+       github user (specified by its github username, <github‐user>).
 
 
 
