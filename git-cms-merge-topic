@@ -13,6 +13,7 @@ usage () {
   $ECHO
   $ECHO "Options:"
   $ECHO
+  $ECHO "-u/--unsafe           \tDo not perform checkdeps at the end"
   $ECHO "-q/--quiet            \tBe completely quiet"
   $ECHO "-v/--verbose          \tShow verbose output"
   $ECHO "-d/--debug            \tShow debug information"
@@ -21,6 +22,9 @@ usage () {
 
 while [ $# -gt 0 ]; do
   case $1 in 
+    -u|--unsafe)
+      UNSAFE=true
+      ;;
     -v|--verbose)
       NORMAL_STREAM=/dev/stdout
       VERBOSE_STREAM=/dev/stdout
@@ -93,3 +97,8 @@ git read-tree -mu HEAD
 git merge --ff merge-attempt >$DEBUG_STREAM 
 # Delete the branch used for merge
 git branch -D merge-attempt >$DEBUG_STREAM || true
+# Do checkdeps unless not specified.
+if [ ! "X$UNSAFE" = Xtrue ]; then
+  git cms-checkdeps -a
+fi
+
