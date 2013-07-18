@@ -24,6 +24,7 @@ while [ $# -gt 0 ]; do
   case $1 in 
     -u|--unsafe)
       UNSAFE=true
+      shift
       ;;
     -v|--verbose)
       NORMAL_STREAM=/dev/stdout
