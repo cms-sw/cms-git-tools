@@ -112,7 +112,13 @@ fi
 
 CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
 
-verbose You are on branch ${CMSSW_BASE_BRANCH}_X
+# SLHC releases
+case $CMSSW_TAG in 
+  *_SLHC*)
+    SLHC=_SLHC ;;
+esac
+
+verbose You are on branch ${CMSSW_BASE_BRANCH}_X$SLHC
 verbose Checking out $PKG_NAME in tag $CMSSW_TAG.
 
 # This is not the case at FNAL. Disabling it for now.
@@ -236,10 +242,10 @@ fi
 
 if [ "X`git symbolic-ref fork-point 2>$DEBUG_STREAM || true`" = X ]; then
   git reset --hard ${CMSSW_TAG} >$DEBUG_STREAM
-  git checkout -b from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X
+  git checkout -b from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X$SLHC
   git symbolic-ref fork-point $CMSSW_TAG
   git reset --hard $CMSSW_TAG
-  git branch --set-upstream from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X 2>$DEBUG_STREAM >$DEBUG_STREAM || git branch --set-upstream-to=official-cmssw/${CMSSW_BASE_BRANCH}_X from-$CMSSW_TAG 2>$DEBUG_STREAM >$DEBUG_STREAM
+  git branch --set-upstream from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X$SLHC 2>$DEBUG_STREAM >$DEBUG_STREAM || git branch --set-upstream-to=official-cmssw/${CMSSW_BASE_BRANCH}_X$SLHC from-$CMSSW_TAG 2>$DEBUG_STREAM >$DEBUG_STREAM
 fi
 
 if [ ! "X`git symbolic-ref fork-point 2>/dev/null || true`" = "X$CMSSW_TAG" ]; then
