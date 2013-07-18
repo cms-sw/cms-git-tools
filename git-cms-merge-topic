@@ -76,7 +76,7 @@ git cms-addpkg FWCore/Version
 cd $CMSSW_BASE/src
 # Fetch the branch specified from github and replace merge-attempt with it. 
 # The + is used to force the merge-attampt branch to be updated.
-git fetch . +HEAD:merge-attempt
+git fetch . +HEAD:merge-attempt || { echo "You are on a failed merge branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
 git fetch https://github.com/$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANCH
 # Save the name of the current branch.
 CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
