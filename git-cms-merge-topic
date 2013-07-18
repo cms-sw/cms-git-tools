@@ -82,7 +82,8 @@ git fetch https://github.com/$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANC
 CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 # Attempt a merge in a separate branch
 git checkout merge-attempt >$DEBUG_STREAM
-git cms-sparse-checkout $DEBUG_OPT $CURRENT_BRANCH $GITHUB_USER/$BRANCH
+MERGE_BASE=`git merge-base $CURRENT_BRANCH $GITHUB_USER/$BRANCH`
+git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
 git read-tree -mu HEAD
 git merge --no-ff -m "Merged $BRANCH from repository $GITHUB_USER" $GITHUB_USER/$BRANCH || { echo "Unable to merge branch $BRANCH from repository $GITHUB_USER." ; exit 1; }
 git checkout $CURRENT_BRANCH 
