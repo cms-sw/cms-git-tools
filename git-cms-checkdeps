@@ -138,7 +138,7 @@ foreach my $package (@packages) {
     next if ($package =~/^UserCode.*/o);
     my $reltag=$ENV{CMSSW_VERSION};
     print ">> Checking $package $reltag\n";
-    my $diffs=`git diff --name-status -r $reltag $package | grep -v .gitignore | sed -e 's/[ \t]\+/ /'`;
+    my $diffs=`git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r $reltag $package | grep -v .gitignore | sed -e 's/[ \t]\+/ /'`;
     my @diffs=split('\n',$diffs);
     my %msgs=("-" => {}, "x" => {});
     foreach my $diff (@diffs) {
