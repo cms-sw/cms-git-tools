@@ -12,6 +12,7 @@ testPaths () {
   assertEquals "Not testing the correct git-cms-addpkg" `dirname "$gitCmsAddpkg"` "$CUR_PATH"
   assertEquals "Not testing the correct git-cms-merge-topic" `dirname "$gitCmsMergeTopic"` "$CUR_PATH"
   assertEquals "Not testing the correct git-cms-checkdeps" `dirname "$gitCmsCheckdeps"` "$CUR_PATH"
+  assertTrue "Git should be present and working" "git --version"
 }
 
 testCheckdeps(){
