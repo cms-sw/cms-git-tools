@@ -3,79 +3,89 @@ GIT_CMS_CHECKDEPS(1)                                      GIT_CMS_CHECKDEPS(1)
 
 
 NNAAMMEE
-       git-cms-checkdeps  - CMSSW helper to checkout packages which need to be
+       git‐cms‐checkdeps  ‐ CMSSW helper to checkout packages which need to be
        recompiled after some change
 
 
 SSYYNNOOPPSSIISS
-       ggiitt ccmmss--cchheecckkddeeppss [[ooppttiioonnss]]
+       ggiitt ccmmss‐‐cchheecckkddeeppss [[ooppttiioonnss]]
 
 
 DDEESSCCRRIIPPTTIIOONN
        Utility to check your local development area against the CMSSW release.
        Any  modified  header files or python modules are found and the package
-       dependencies of these files will be returned. addpkg-ing these packages
+       dependencies of these files will be returned. addpkg‐ing these packages
        and rebuilding them should provide a full and consistent build.
 
 
 OOPPTTIIOONNSS
-       Notice  that by default it will not checkout anything, use -a option to
+       Notice  that by default it will not checkout anything, use ‐a option to
        do so.
 
 
 
 
-            -p    look for python  modules  and  their  dependencies   (ON  by
+            ‐p    look for python  modules  and  their  dependencies   (ON  by
             default)
 
 
 
 
-            -h     look  for  header  files  and  their dependencies    (ON by
+            ‐h     look  for  header  files  and  their dependencies    (ON by
             default)
 
 
 
 
-            -b    look for BuildFile files  and  their  dependencies  (OFF  by
+            ‐b    look for BuildFile files  and  their  dependencies  (OFF  by
             default)
 
 
 
 
-            -f     print  name  of changed file name instead of type of depen-
+            ‐f     print  name  of changed file name instead of type of depen‐
             dency (OFF by default)
 
 
 
 
-            -a    will add/checkout the packages into  your  development  area
+            ‐a    will add/checkout the packages into  your  development  area
             (OFF by default)
 
 
 
 
-            -A    will check all dependencies i.e. header (-h), python(-p) and
-            BuildFile(-b)
+            ‐A    will check all dependencies i.e. header (‐h), python(‐p) and
+            BuildFile(‐b)
 
 
 
 
-            -d    do not create dummy copy of deleted files in  poison  direc-
+            ‐d    do not create dummy copy of deleted files in  poison  direc‐
             tory. Dummy copies are useful to find out if deleted headers files
             are included by other source files.
 
 
 
 
-            -D    only dummy copy of deleted files in  poison  directory  cre-
-            ated.   NOTE: all other dependency check/add command-line args are
+            ‐D    only dummy copy of deleted files in  poison  directory  cre‐
+            ated.   NOTE: all other dependency check/add command‐line args are
             ignored.
 
 
 
 
-            -q    will pass -Q option to cvs to make it quiet
+            ‐q    will pass ‐Q option to cvs to make it quiet
+
+
+PPOOSSSSIIBBLLEE MMIISSBBEEHHAAVVIIOORRSS
+       git cms‐checkdeps tries to be smart and ignore changes which include  a
+       CVS  keyword.  However  this mean that if on the same line you change a
+       CVS keyword and something else, these changes will be ignored as  well.
+       This  in  general  not an issue, gowever there might be corner cases in
+       which you might have used a CVS keyword in some place  where  there  is
+       also a change actually matters on the same line. git cms‐checkdeps will
+       not spot those.
 
 
 
