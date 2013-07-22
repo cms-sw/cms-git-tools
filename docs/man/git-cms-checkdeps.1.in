@@ -74,3 +74,12 @@ NOTE: all other dependency check/add command-line args are ignored.
 -q
 
 will pass -Q option to cvs to make it quiet
+
+.SH POSSIBLE MISBEHAVIORS
+
+git cms-checkdeps tries to be smart and ignore changes which include a CVS
+keyword. However this mean that if on the same line you change a CVS keyword
+and something else, these changes will be ignored as well. This in general not
+an issue, gowever there might be corner cases in which you might have used a
+CVS keyword in some place where there is also a change actually matters on 
+the same line. git cms-checkdeps will not spot those.
