@@ -52,6 +52,15 @@ while [ "$#" != 0 ]; do
       set -x
       shift
       ;;
+    --exclude-cvs-keywords)
+      REGEX='^([^$]+$|[^$]*[$][^$]*$|([^$]*[$])($|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))'
+      REGEX_OPT="-G"
+      shift
+      ;;
+    -G)
+      REGEX_OPT="-G"
+      REGEX="$2"; shift ; shift
+      ;;
     -*)
       echo Unknown option $1 ; usage 1 ;;
     *)
@@ -71,8 +80,7 @@ git config core.sparsecheckout true
 INFO_DIR=`git rev-parse --show-toplevel`/.git/info/
 touch $INFO_DIR/sparse-checkout
 cp -f $INFO_DIR/sparse-checkout $INFO_DIR/sparse-checkout-new
-
-for x in `git diff $REF1..$REF2 --name-only | grep -v ".gitconfig" | cut -f1,2 -d/ | sort -u`; do
+for x in `git diff $REGEX_OPT $REGEX $REF1..$REF2 --name-only | grep -v ".gitconfig" | cut -f1,2 -d/ | sort -u`; do
   echo "$x" | sed -e 's|[/]*$|/|;s|^/*|/|' >> $INFO_DIR/sparse-checkout-new
 done
 
