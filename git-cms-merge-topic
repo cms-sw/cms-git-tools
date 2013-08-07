@@ -17,6 +17,7 @@ usage () {
   $ECHO "-q/--quiet            \tBe completely quiet"
   $ECHO "-v/--verbose          \tShow verbose output"
   $ECHO "-d/--debug            \tShow debug information"
+  $ECHO "   --ssh              \tAccess github via ssh rather than https"
   exit 1
 }
 
@@ -45,6 +46,10 @@ while [ $# -gt 0 ]; do
       DEBUG_OPT=-d
       set -x
       shift
+      ;;
+    --ssh )
+      USE_SSH_ACCESS_METHOD=true
+      shift; 
       ;;
     -*)
       echo "Unknown option $1" ; exit 1 ;;
@@ -82,7 +87,11 @@ cd $CMSSW_BASE/src
 # Fetch the branch specified from github and replace merge-attempt with it. 
 # The + is used to force the merge-attampt branch to be updated.
 git fetch . +HEAD:merge-attempt || { echo "You are on a failed merge branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
-git fetch https://github.com/$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANCH
+if [ "X$USE_SSH_ACCESS_METHOD" = X ]; then
+  git fetch https://github.com/$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANCH
+else
+  git fetch git@github.com:$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANCH
+fi
 # Save the name of the current branch.
 CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 # Attempt a merge in a separate branch
