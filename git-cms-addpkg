@@ -212,9 +212,9 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   git remote rename origin official-cmssw
   git fetch official-cmssw --tags
   if [ "X$USE_HTTPS_ACCESS_METHOD" = X ]; then
-    git config remote.my-cmssw.url git@github.com:$GITHUB_USERNAME/cmssw.git
+    git remote add my-cmssw git@github.com:$GITHUB_USERNAME/cmssw.git
   else
-    git config remote.my-cmssw.url https://github.com/$GITHUB_USERNAME/cmssw.git
+    git remote add my-cmssw https://github.com/$GITHUB_USERNAME/cmssw.git
   fi
 fi
 git config --get-all remote.official-cmssw.fetch | grep "refs/remotes/official-cmssw/*" >$DEBUG_STREAM || git config remote.official-cmssw.fetch "+refs/heads/*:refs/remotes/official-cmssw/*"
