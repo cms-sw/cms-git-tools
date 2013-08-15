@@ -5,7 +5,7 @@ case `uname` in
   *) ECHO="echo -e" ;;
 esac
 usage () {
-  echo "git cms-addpkg [options] [release]"
+  echo "git cms-init [options] [release]"
   echo
   echo "Options:"
   $ECHO "-h                 \tthis help message"
