@@ -12,7 +12,6 @@ usage () {
   $ECHO "-h                 \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
-  $ECHO "-f, --force        \tforce dangerous operations"
   $ECHO "-z, --quiet        \tdo not print out progress"
   exit $1
 }
