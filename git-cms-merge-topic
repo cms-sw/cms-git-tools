@@ -82,7 +82,7 @@ fi
 DEBUG_STREAM=/dev/null
 
 PULL_ID=$1
-git cms-addpkg FWCore/Version
+git cms-init --quiet
 cd $CMSSW_BASE/src
 # Fetch the branch specified from github and replace merge-attempt with it. 
 # The + is used to force the merge-attampt branch to be updated.
