@@ -21,6 +21,10 @@ usage () {
   exit 1
 }
 
+NORMAL_STREAM=/dev/stdout
+VERBOSE_STREAM=/dev/stdout
+DEBUG_STREAM=/dev/null
+
 while [ $# -gt 0 ]; do
   case $1 in 
     -u|--unsafe)
@@ -78,8 +82,6 @@ done
 if [ X$BRANCH = X ]; then
   usage
 fi
-
-DEBUG_STREAM=/dev/null
 
 PULL_ID=$1
 git cms-init --quiet
