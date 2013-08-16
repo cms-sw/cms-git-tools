@@ -85,3 +85,4 @@ for x in `git diff $REGEX_OPT $REGEX $REF1..$REF2 --name-only | grep -v ".gitcon
 done
 
 cat $INFO_DIR/sparse-checkout-new | sort -u > $INFO_DIR/sparse-checkout
+rm -f $INFO_DIR/sparse-checkout-new
