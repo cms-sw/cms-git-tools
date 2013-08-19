@@ -132,6 +132,8 @@ case `git --version` in
   git\ version\ 1.7*)
     OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
     USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
+    # git 1.7.x does not support a leading slash in /gitignore and .git/info/sparse-checkout
+    LEADING_SLASH=
   ;;
   *)
     if [ "X$USE_SSH_ACCESS_METHOD" = X ]; then
@@ -144,6 +146,7 @@ case `git --version` in
     else
       USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
     fi
+    LEADING_SLASH=/
   ;;
 esac
 
@@ -226,7 +229,7 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
 
   # setup sparse checkout
   git config core.sparsecheckout true
-  echo "/.gitignore" > $CMSSW_BASE/src/.git/info/sparse-checkout
+  echo "${LEADING_SLASH}.gitignore" > $CMSSW_BASE/src/.git/info/sparse-checkout
   git checkout ${CMSSW_BASE_BRANCH}_X${SLHC} -- .gitignore
   git read-tree -mu HEAD
 fi
