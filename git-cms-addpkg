@@ -13,6 +13,7 @@ usage () {
   $ECHO "-d, --debug        \tenable debug output"
   $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
   $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
+  $ECHO "    --no-user      \tdo not access the personal repository"
   $ECHO "-z, --quiet        \tdo not print out progress"
   $ECHO "-y, --yes          \tassume yes to all questions"
   exit $1
@@ -50,6 +51,9 @@ while [ "$#" != 0 ]; do
     --ssh )
       INITOPTIONS="$INITOPTIONS $1"
       shift; USE_SSH_ACCESS_METHOD=true ;;
+    --no-user )
+      INITOPTIONS="$INITOPTIONS $1"
+      shift ;;
     -*)
       echo Unknown option $1 ; usage 1 ;;
     *)
