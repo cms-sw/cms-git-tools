@@ -17,13 +17,17 @@ usage () {
   $ECHO "-q, --quiet        \tbe completely quiet"
   $ECHO "-v, --verbose      \tshow verbose output"
   $ECHO "-d, --debug        \tshow debug information"
-  $ECHO "    --ssh          \taccess github via ssh rather than https"
+  $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
+  $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
+  $ECHO "    --no-user      \tdo not access the personal repository"
   exit 1
 }
 
 NORMAL_STREAM=/dev/stdout
 VERBOSE_STREAM=/dev/stdout
 DEBUG_STREAM=/dev/null
+
+INITOPTIONS=""                      # options passed to git cms-init
 
 while [ $# -gt 0 ]; do
   case $1 in 
@@ -48,11 +52,23 @@ while [ $# -gt 0 ]; do
       VERBOSE_STREAM=/dev/stdout
       DEBUG_STREAM=/dev/stdout
       DEBUG_OPT=-d
+      INITOPTIONS="$INITOPTIONS $1"
       set -x
       shift
       ;;
     --ssh )
       USE_SSH_ACCESS_METHOD=true
+      INITOPTIONS="$INITOPTIONS $1"
+      shift; 
+      ;;
+    --https )
+      # unused, passed to git cms-init
+      INITOPTIONS="$INITOPTIONS $1"
+      shift; 
+      ;;
+    --no-user )
+      # unused, passed to git cms-init
+      INITOPTIONS="$INITOPTIONS $1"
       shift; 
       ;;
     -*)
@@ -84,7 +100,7 @@ if [ X$BRANCH = X ]; then
 fi
 
 PULL_ID=$1
-git cms-init --quiet
+git cms-init --quiet $INITOPTIONS
 cd $CMSSW_BASE/src
 # Fetch the branch specified from github and replace merge-attempt with it. 
 # The + is used to force the merge-attampt branch to be updated.
