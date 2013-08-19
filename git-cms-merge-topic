@@ -13,11 +13,11 @@ usage () {
   $ECHO
   $ECHO "Options:"
   $ECHO
-  $ECHO "-u/--unsafe           \tDo not perform checkdeps at the end"
-  $ECHO "-q/--quiet            \tBe completely quiet"
-  $ECHO "-v/--verbose          \tShow verbose output"
-  $ECHO "-d/--debug            \tShow debug information"
-  $ECHO "   --ssh              \tAccess github via ssh rather than https"
+  $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
+  $ECHO "-q, --quiet        \tbe completely quiet"
+  $ECHO "-v, --verbose      \tshow verbose output"
+  $ECHO "-d, --debug        \tshow debug information"
+  $ECHO "    --ssh          \taccess github via ssh rather than https"
   exit 1
 }
 
