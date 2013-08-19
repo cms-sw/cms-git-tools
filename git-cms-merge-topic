@@ -21,6 +21,10 @@ usage () {
   exit 1
 }
 
+NORMAL_STREAM=/dev/stdout
+VERBOSE_STREAM=/dev/stdout
+DEBUG_STREAM=/dev/null
+
 while [ $# -gt 0 ]; do
   case $1 in 
     -u|--unsafe)
@@ -79,10 +83,8 @@ if [ X$BRANCH = X ]; then
   usage
 fi
 
-DEBUG_STREAM=/dev/null
-
 PULL_ID=$1
-git cms-addpkg FWCore/Version
+git cms-init --quiet
 cd $CMSSW_BASE/src
 # Fetch the branch specified from github and replace merge-attempt with it. 
 # The + is used to force the merge-attampt branch to be updated.
