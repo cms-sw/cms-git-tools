@@ -75,12 +75,22 @@ while [ "$#" != 0 ]; do
   esac
 done
 
+case `git --version` in 
+  git\ version\ 1.7*)
+    # git 1.7.x does not support a leading slash in /gitignore and .git/info/sparse-checkout
+    LEADING_SLASH=
+  ;;
+  *)
+    LEADING_SLASH=/
+  ;;
+esac
+
 git config core.sparsecheckout true
 INFO_DIR=`git rev-parse --show-toplevel`/.git/info/
 touch $INFO_DIR/sparse-checkout
 cp -f $INFO_DIR/sparse-checkout $INFO_DIR/sparse-checkout-new
 for x in `git diff $REGEX_OPT $REGEX $REF1..$REF2 --name-only | grep -v ".gitconfig" | cut -f1,2 -d/ | sort -u`; do
-  echo "$x" | sed -e 's|[/]*$|/|;s|^/*|/|' >> $INFO_DIR/sparse-checkout-new
+  echo "$x" | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $INFO_DIR/sparse-checkout-new
 done
 
 cat $INFO_DIR/sparse-checkout-new | sort -u > $INFO_DIR/sparse-checkout
