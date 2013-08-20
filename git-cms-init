@@ -49,7 +49,8 @@ while [ "$#" != 0 ]; do
       if [ "X$CMSSW_TAG" = X ]; then
         CMSSW_TAG=$1
       else
-        echo "You can specify only one package at the time." ; exit 1
+        echo Unexpected argument $1
+        usage 1
       fi
       shift 1
     ;;
