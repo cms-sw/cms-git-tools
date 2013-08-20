@@ -233,14 +233,14 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
     git fetch my-cmssw                2> $VERBOSE_STREAM
     git fetch my-cmssw --tags         2> $VERBOSE_STREAM
   else
-    $ECHO
-    $ECHO "You don't seem to have a personal repository on GitHub, or your GitHub username "
-    $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct. You can work locally, but you will not be able "
-    $ECHO "to push your changes to GitHub for inclusion in the official CMSSW distribution."
-    $ECHO "To create a personal repository:"
-    $ECHO "  - go to https://github.com/ and log in"
-    $ECHO "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"
-    $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"
+    $ECHO                                                                                                   > $VERBOSE_STREAM
+    $ECHO "You don't seem to have a personal repository on GitHub, or your GitHub username "                > $VERBOSE_STREAM
+    $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct. You can work locally, but you will not be able "   > $VERBOSE_STREAM
+    $ECHO "to push your changes to GitHub for inclusion in the official CMSSW distribution."                > $VERBOSE_STREAM
+    $ECHO "To create a personal repository:"                                                                > $VERBOSE_STREAM
+    $ECHO "  - go to https://github.com/ and log in"                                                        > $VERBOSE_STREAM
+    $ECHO "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"                          > $VERBOSE_STREAM
+    $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"  > $VERBOSE_STREAM
   fi
 
   # setup sparse checkout
