@@ -22,6 +22,9 @@ VERBOSE=1
 VERBOSE_STREAM=/dev/stderr
 DEBUG_STREAM=/dev/null
 
+RED='\033[31m'
+NORMAL='\033[0m'
+
 verbose () {
   if [ "X$VERBOSE" = X1 ]; then
     echo "$@"
@@ -223,10 +226,22 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   git branch from-$CMSSW_TAG $CMSSW_TAG
   git symbolic-ref HEAD refs/heads/from-$CMSSW_TAG
 
-  # add the user's remote repository
-  git remote add my-cmssw $USER_CMSSW_REPO
-  git fetch my-cmssw                2> $VERBOSE_STREAM
-  git fetch my-cmssw --tags         2> $VERBOSE_STREAM
+  # check if the user's remote repository exists
+  if git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
+    # add the user's remote repository
+    git remote add my-cmssw $USER_CMSSW_REPO
+    git fetch my-cmssw                2> $VERBOSE_STREAM
+    git fetch my-cmssw --tags         2> $VERBOSE_STREAM
+  else
+    $ECHO
+    $ECHO "You don't seem to have a personal repository on GitHub, or your GitHub username "
+    $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct. You can work locally, but you will not be able "
+    $ECHO "to push your changes to GitHub for inclusion in the official CMSSW distribution."
+    $ECHO "To create a personal repository:"
+    $ECHO "  - go to https://github.com/ and log in"
+    $ECHO "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"
+    $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"
+  fi
 
   # setup sparse checkout
   git config core.sparsecheckout true
