@@ -135,7 +135,7 @@ if [ "$INPUT_FILE" ]; then
 
   # check the syntax of the input file
   INVALID=`cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | grep -v -E '^/*\w+(/\w+)?/*$'`
-  if [ $? == 0 ]
+  if [ $? == 0 ]; then
     echo "Some lines of $INPUT_FILE are not in a valid format:"
     echo "$INVALID"
     exit 1
