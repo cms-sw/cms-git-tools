@@ -13,7 +13,7 @@ usage () {
   $ECHO "-d, --debug        \tenable debug output"
   $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
   $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
-  $ECHO "-z, --quiet        \tdo not print out progress"
+  $ECHO "-q, --quiet, -z    \tdo not print out progress"
   $ECHO "-y, --yes          \tassume yes to all questions"
   exit $1
 }
@@ -21,6 +21,9 @@ usage () {
 VERBOSE=1
 VERBOSE_STREAM=/dev/stderr
 DEBUG_STREAM=/dev/null
+
+RED='\033[31m'
+NORMAL='\033[0m'
 
 verbose () {
   if [ "X$VERBOSE" = X1 ]; then
@@ -35,7 +38,7 @@ while [ "$#" != 0 ]; do
       usage 0;;
     -d | --debug )
       shift; set -x; DEBUG_STREAM=/dev/stderr ;;
-    -q | --quiet )
+    -q | --quiet | -z )
       shift; set +x; VERBOSE=0; VERBOSE_STREAM=/dev/null ;;
     -y | --yes )
       shift; ASSUME_YES=1 ;;
@@ -49,7 +52,8 @@ while [ "$#" != 0 ]; do
       if [ "X$CMSSW_TAG" = X ]; then
         CMSSW_TAG=$1
       else
-        echo "You can specify only one package at the time." ; exit 1
+        echo Unexpected argument $1
+        usage 1
       fi
       shift 1
     ;;
@@ -96,21 +100,36 @@ if [ "X$CMSSW_BASE" = X ]; then
   fi
 fi
 
-if [ "X$CMSSW_TAG" = X ]; then
-  verbose No release tags specified, using default $CMSSW_VERSION.
-  CMSSW_TAG=$CMSSW_VERSION
+if [ -d $CMSSW_BASE/src/.git ]; then
+  CURRENT_BRANCH=`git symbolic-ref --short HEAD`
+  CURRENT_TAG=`echo $CURRENT_BRANCH | sed -e's/^from-*//'`
 fi
 
+if [ "X$CMSSW_TAG" = X ]; then
+  if [ "$CURRENT_BRANCH" ]; then
+    verbose No release tags specified, using current branch $CURRENT_BRANCH
+    CMSSW_TAG=$CURRENT_TAG
+  else
+    verbose No release tags specified, using default $CMSSW_VERSION.
+    CMSSW_TAG=$CMSSW_VERSION
+  fi
+fi
+
+if [ "$CURRENT_BRANCH" ] && [ "$CURRENT_TAG" != "$CMSSW_TAG" ]; then
+  echo "Attention, you have requested a release tag $CMSSW_TAG, but your local git repository has been set up for $CURRENT_TAG."
+  echo "Aborting."
+  exit 1
+fi
 
 CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
 
 # SLHC releases
 case $CMSSW_TAG in 
   *_SLHC*)
-    SLHC=_SLHC ;;
+    CMSSW_BRANCH=${CMSSW_BASE_BRANCH}_X_SLHC ;;
+  *)
+    CMSSW_BRANCH=${CMSSW_BASE_BRANCH}_X ;;
 esac
-
-verbose You are on branch ${CMSSW_BASE_BRANCH}_X$SLHC
 
 # This is not the case at FNAL. Disabling it for now.
 #IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
@@ -132,7 +151,7 @@ case `git --version` in
   git\ version\ 1.7*)
     OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
     USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
-    # git 1.7.x does not support a leading slash in /gitignore and .git/info/sparse-checkout
+    # git 1.7.x does not support a leading slash in .gitignore and .git/info/sparse-checkout
     LEADING_SLASH=
   ;;
   *)
@@ -199,6 +218,7 @@ if [ ! -e $CMSSW_GIT_REFERENCE ]; then
   done
 fi
 
+# if using a personal reference repository, update it from the official one
 if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
 fi
@@ -208,13 +228,13 @@ cd $CMSSW_BASE/src
 if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   # clone the official repository from $OFFICIAL_CMSSW_REPO, using $CMSSW_GIT_REFERENCE as a local reference, inside $CMSSW_BASE/src
   # name the remote repository "official-cmssw"
-  # start on the branch ${CMSSW_BASE_BRANCH}_X${SLHC}
+  # start on the branch $CMSSW_BRANCH
   # do not checkout any files
   # import all remote tags
   if [ -n "$CMSSW_GIT_REFERENCE" ]; then
-    git clone --branch ${CMSSW_BASE_BRANCH}_X${SLHC} --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
+    git clone --branch $CMSSW_BRANCH --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
   else
-    git clone --branch ${CMSSW_BASE_BRANCH}_X${SLHC} --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
+    git clone --branch $CMSSW_BRANCH --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
   fi
   git fetch official-cmssw --tags   2> $VERBOSE_STREAM
 
@@ -222,14 +242,28 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   git branch from-$CMSSW_TAG $CMSSW_TAG
   git symbolic-ref HEAD refs/heads/from-$CMSSW_TAG
 
-  # add the user's remote repository
-  git remote add my-cmssw $USER_CMSSW_REPO
-  git fetch my-cmssw                2> $VERBOSE_STREAM
-  git fetch my-cmssw --tags         2> $VERBOSE_STREAM
+  # check if the user's remote repository exists
+  if git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
+    # add the user's remote repository
+    git remote add my-cmssw $USER_CMSSW_REPO
+    git fetch my-cmssw                2> $VERBOSE_STREAM
+    git fetch my-cmssw --tags         2> $VERBOSE_STREAM
+  else
+    $ECHO                                                                                                   > $VERBOSE_STREAM
+    $ECHO "You don't seem to have a personal repository on GitHub, or your GitHub username "                > $VERBOSE_STREAM
+    $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct. You can work locally, but you will not be able "   > $VERBOSE_STREAM
+    $ECHO "to push your changes to GitHub for inclusion in the official CMSSW distribution."                > $VERBOSE_STREAM
+    $ECHO "To create a personal repository:"                                                                > $VERBOSE_STREAM
+    $ECHO "  - go to https://github.com/ and log in"                                                        > $VERBOSE_STREAM
+    $ECHO "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"                          > $VERBOSE_STREAM
+    $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"  > $VERBOSE_STREAM
+  fi
 
   # setup sparse checkout
   git config core.sparsecheckout true
   echo "${LEADING_SLASH}.gitignore" > $CMSSW_BASE/src/.git/info/sparse-checkout
-  git checkout ${CMSSW_BASE_BRANCH}_X${SLHC} -- .gitignore
+  git checkout $CMSSW_BRANCH -- .gitignore
   git read-tree -mu HEAD
 fi
+
+verbose You are on branch `git symbolic-ref --short HEAD`
