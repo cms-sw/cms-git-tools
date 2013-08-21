@@ -131,8 +131,6 @@ case $CMSSW_TAG in
     CMSSW_BRANCH=${CMSSW_BASE_BRANCH}_X ;;
 esac
 
-verbose You are on branch $CMSSW_BRANCH
-
 # This is not the case at FNAL. Disabling it for now.
 #IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
 #if [ "X$IN_RELEASE" = X0 ]; then
@@ -153,7 +151,7 @@ case `git --version` in
   git\ version\ 1.7*)
     OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
     USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
-    # git 1.7.x does not support a leading slash in /gitignore and .git/info/sparse-checkout
+    # git 1.7.x does not support a leading slash in .gitignore and .git/info/sparse-checkout
     LEADING_SLASH=
   ;;
   *)
@@ -267,3 +265,5 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   git checkout $CMSSW_BRANCH -- .gitignore
   git read-tree -mu HEAD
 fi
+
+verbose You are on branch `git symbolic-ref --short HEAD`

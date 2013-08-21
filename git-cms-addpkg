@@ -101,9 +101,6 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
 fi
 
-CMSSW_BRANCH=`git symbolic-ref --short HEAD`
-verbose You are on branch $CMSSW_BRANCH
-
 # refresh the local repository
 [ -n "$CMSSW_MIRROR" ] && git remote set-url official-cmssw $CMSSW_MIRROR
 git fetch official-cmssw        2> $VERBOSE_STREAM
