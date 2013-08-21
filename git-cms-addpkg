@@ -156,13 +156,19 @@ else
 fi
 
 git read-tree -mu HEAD
-case $PKG_NAME in
-  *[*]* )
-  ;;
-  *)
+CURRENT_BRANCH=`git symbolic-ref --short HEAD`
+
+if [ "$INPUT_FILE" ]; then
+  for PKG_NAME in `cat $INPUT_FILE`; do
     if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
-      echo "package $PKG_NAME does not exist ..." # FIXME add branch name
-      exit 1
+      [ "$HEADER" ] || { echo "these packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
+      echo $PKG_NAME
     fi
-  ;;
-esac
+    [ "$HEADER" ] && exit 1
+  done
+else
+  if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
+    echo "package $PKG_NAME does not exist in branch $CURRENT_BRANCH"
+    exit 1
+  fi
+fi
