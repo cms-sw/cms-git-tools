@@ -1,4 +1,4 @@
-#! /bin/bash -e
+#!/bin/sh -e
 # Mimics addpkg behavior in git.
 case `uname` in
   Darwin) ECHO=echo ;;
@@ -257,7 +257,7 @@ fi
 
 if [ "$INPUT_FILE" ]; then
   verbose "Checking out packages in tag $CMSSW_TAG:"
-  verbose "$(< "$INPUT_FILE")"
+  verbose "`cat "$INPUT_FILE"`"
 
   # FIXME check the syntax of the input file ?
 
