@@ -139,7 +139,7 @@ if [ "$INPUT_FILE" ]; then
   verbose "`cat "$INPUT_FILE"`"
 
   # check the syntax of the input file
-  INVALID=`cat "$INPUT_FILE" | grep -v '^#' | grep -v '^\s*$' | grep -v -E '^/*\w+(/\w+)?/*$'`
+  INVALID=`cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | grep -v -E '^/*\w+(/\w+)?/*$'`
   if [ $? == 0 ]
     echo "Some lines of $INPUT_FILE are not in a valid format:"
     echo "$INVALID"
@@ -149,7 +149,7 @@ if [ "$INPUT_FILE" ]; then
 
   # add the requested package(s) to the sparse checkout
   cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
-  cat "$INPUT_FILE" | grep -v '^#' | grep -v '^\s*$' | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+  cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
   cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout
   rm -f .git/info/sparse-checkout-new
 else
