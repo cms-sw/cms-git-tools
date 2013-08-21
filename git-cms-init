@@ -105,16 +105,17 @@ if [ "X$CMSSW_TAG" = X ]; then
   CMSSW_TAG=$CMSSW_VERSION
 fi
 
-
 CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
 
 # SLHC releases
 case $CMSSW_TAG in 
   *_SLHC*)
-    SLHC=_SLHC ;;
+    CMSSW_BRANCH=${CMSSW_BASE_BRANCH}_X_SLHC ;;
+  *)
+    CMSSW_BRANCH=${CMSSW_BASE_BRANCH}_X ;;
 esac
 
-verbose You are on branch ${CMSSW_BASE_BRANCH}_X$SLHC
+verbose You are on branch $CMSSW_BRANCH
 
 # This is not the case at FNAL. Disabling it for now.
 #IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
@@ -213,13 +214,13 @@ cd $CMSSW_BASE/src
 if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   # clone the official repository from $OFFICIAL_CMSSW_REPO, using $CMSSW_GIT_REFERENCE as a local reference, inside $CMSSW_BASE/src
   # name the remote repository "official-cmssw"
-  # start on the branch ${CMSSW_BASE_BRANCH}_X${SLHC}
+  # start on the branch $CMSSW_BRANCH
   # do not checkout any files
   # import all remote tags
   if [ -n "$CMSSW_GIT_REFERENCE" ]; then
-    git clone --branch ${CMSSW_BASE_BRANCH}_X${SLHC} --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
+    git clone --branch $CMSSW_BRANCH --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
   else
-    git clone --branch ${CMSSW_BASE_BRANCH}_X${SLHC} --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
+    git clone --branch $CMSSW_BRANCH --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
   fi
   git fetch official-cmssw --tags   2> $VERBOSE_STREAM
 
@@ -247,6 +248,6 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   # setup sparse checkout
   git config core.sparsecheckout true
   echo "${LEADING_SLASH}.gitignore" > $CMSSW_BASE/src/.git/info/sparse-checkout
-  git checkout ${CMSSW_BASE_BRANCH}_X${SLHC} -- .gitignore
+  git checkout $CMSSW_BRANCH -- .gitignore
   git read-tree -mu HEAD
 fi
