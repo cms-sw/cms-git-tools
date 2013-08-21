@@ -100,9 +100,25 @@ if [ "X$CMSSW_BASE" = X ]; then
   fi
 fi
 
+if [ -d $CMSSW_BASE/src/.git ]; then
+  CURRENT_BRANCH=`git symbolic-ref --short HEAD`
+  CURRENT_TAG=`echo $CURRENT_BRANCH | sed -e's/^from-*//'`
+fi
+
 if [ "X$CMSSW_TAG" = X ]; then
-  verbose No release tags specified, using default $CMSSW_VERSION.
-  CMSSW_TAG=$CMSSW_VERSION
+  if [ "$CURRENT_BRANCH" ]; then
+    verbose No release tags specified, using current branch $CURRENT_BRANCH
+    CMSSW_TAG=$CURRENT_TAG
+  else
+    verbose No release tags specified, using default $CMSSW_VERSION.
+    CMSSW_TAG=$CMSSW_VERSION
+  fi
+fi
+
+if [ "$CURRENT_BRANCH" ] && [ "$CURRENT_TAG" != "$CMSSW_TAG" ]; then
+  echo "Attention, you have requested a release tag $CMSSW_TAG, but your local git repository has been set up for $CURRENT_TAG."
+  echo "Aborting."
+  exit 1
 fi
 
 CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
