@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # Mimics addpkg behavior in git.
-case `uname` in 
+case `uname` in
   Darwin) ECHO=echo ;;
   *) ECHO="echo -e" ;;
 esac
@@ -96,7 +96,7 @@ fi
 
 
 if [ "X$PKG_NAME" = X ]; then
-  echo "You need to specify at least one package." ; exit 1 
+  echo "You need to specify at least one package." ; exit 1
 fi
 
 if [ "X$CMSSW_BASE" = X ]; then
@@ -117,7 +117,7 @@ fi
 CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
 
 # SLHC releases
-case $CMSSW_TAG in 
+case $CMSSW_TAG in
   *_SLHC*)
     SLHC=_SLHC ;;
 esac
@@ -138,7 +138,7 @@ esac
 #  fi
 #fi
 
-case `git --version` in 
+case `git --version` in
   git\ version\ 1.7*)
     OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
     USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
@@ -262,7 +262,7 @@ rm -f .git/info/sparse-checkout-new
 #fi
 
 git read-tree -mu HEAD
-case $PKG_NAME in 
+case $PKG_NAME in
   *[*]* )
   ;;
   *)
