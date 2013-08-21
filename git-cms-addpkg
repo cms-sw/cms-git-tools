@@ -13,7 +13,7 @@ usage () {
   $ECHO "-d, --debug        \tenable debug output"
   $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
   $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
-  $ECHO "-z, --quiet        \tdo not print out progress"
+  $ECHO "-q, --quiet, -z    \tdo not print out progress"
   $ECHO "-y, --yes          \tassume yes to all questions"
   exit $1
 }
@@ -38,7 +38,7 @@ while [ "$#" != 0 ]; do
     -d | --debug )
       INITOPTIONS="$INITOPTIONS $1"
       shift; set -x; DEBUG_STREAM=/dev/stderr ;;
-    -q | --quiet )
+    -q | --quiet | -z )
       INITOPTIONS="$INITOPTIONS $1"
       shift; set +x; VERBOSE=0; VERBOSE_STREAM=/dev/null ;;
     -y | --yes )
