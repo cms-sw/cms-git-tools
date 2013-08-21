@@ -235,32 +235,6 @@ echo "$PKG_NAME" | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/sr
 cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout
 rm -f .git/info/sparse-checkout-new
 
-#cd $CMSSW_BASE/src
-#if [ "X`git show-ref $CMSSW_TAG || true`"  = X ]; then
-#  echo "Unknown tag $CMSSW_TAG."
-#  if [ "X$VERBOSE" = X1 ]; then
-#    echo "Similar known tags in the repository are:"
-#    git tag | grep $CMSSW_BASE_BRANCH
-#  fi
-#  exit 1
-#fi
-#
-#if [ "X`git symbolic-ref fork-point 2>$DEBUG_STREAM || true`" = X ]; then
-#  git reset --hard ${CMSSW_TAG} >$DEBUG_STREAM
-#  git checkout -b from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X$SLHC
-#  git symbolic-ref fork-point $CMSSW_TAG
-#  git reset --hard $CMSSW_TAG
-#  git branch --set-upstream from-$CMSSW_TAG official-cmssw/${CMSSW_BASE_BRANCH}_X$SLHC 2>$DEBUG_STREAM >$DEBUG_STREAM || git branch --set-upstream-to=official-cmssw/${CMSSW_BASE_BRANCH}_X$SLHC from-$CMSSW_TAG 2>$DEBUG_STREAM >$DEBUG_STREAM
-#fi
-#
-#if [ ! "X`git symbolic-ref fork-point 2>/dev/null || true`" = "X$CMSSW_TAG" ]; then
-#  verbose "This operation will merge in your area a $CMSSW_TAG."
-#  if [ ! X$FORCE = X1 ]; then
-#    verbose "Denying operation. Use -f, --force to force it, conflicts might occur."
-#    exit 1
-#  fi
-#fi
-
 git read-tree -mu HEAD
 case $PKG_NAME in
   *[*]* )
