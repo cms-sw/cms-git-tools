@@ -32,7 +32,6 @@ verbose () {
 }
 
 PKG_NAME=
-CMSSW_TAG=
 INPUT_FILE=
 while [ "$#" != 0 ]; do
   case "$1" in
@@ -74,19 +73,15 @@ while [ "$#" != 0 ]; do
         # check out a single package
         if [ "X$PKG_NAME" = X ]; then
           PKG_NAME=$1
-        elif [ "X$CMSSW_TAG" = X ]; then
-          CMSSW_TAG=$1
+          shift
         else
-          echo "git cms-addpkg: you can specify only one package at the time." ; exit 1
+          echo "git cms-addpkg: you can specify only one package at the time."
+          exit 1
         fi
-        shift 1
       else
         # check out a list of packages via -f / --file FILE
-        if [ "X$CMSSW_TAG" = X ]; then
-          CMSSW_TAG=$1
-        else
-          echo "git cms-addpkg: you cannot specify a package and input from file at the same time." ; exit 1
-        fi
+        echo "git cms-addpkg: you cannot specify a package and input from file at the same time."
+        exit 1
       fi
     ;;
   esac
@@ -97,7 +92,7 @@ if [ "$PKG_NAME" == "" ] && [ "$INPUT_FILE" == "" ] ; then
 fi
 
 # initialize the local repository
-git cms-init $INITOPTIONS $CMSSW_TAG
+git cms-init $INITOPTIONS
 cd $CMSSW_BASE/src
 
 GITHUB_USERNAME="`git config --global --get user.github || true`"
