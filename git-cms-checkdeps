@@ -149,7 +149,6 @@ my @packages=sort keys %upackages;
 foreach my $package (@packages) {
     next if ($package =~/^UserCode.*/o);    
     print ">> Checking $package $reltag\n";
-    my @diffs=$upackages{$package};
     my %msgs=("-" => {}, "x" => {});
     foreach my $diff (@{$upackages{$package}}) {
         my $del = 0;
