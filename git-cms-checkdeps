@@ -125,23 +125,33 @@ if ($checkbuildfile)
 
 chdir("${localtop}/src");
 
-# Get the list of packages
-my @packages;
-foreach my $pack (glob("*/*")){
-    push @packages, $pack;
-}
-
 my @changedFiles;
 my @deletedFiles;
+my $reltag=$ENV{CMSSW_VERSION};
+my %upackages=();
+
+foreach my $diff (`git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r $reltag | grep -v .gitignore | sed -e 's/[ \t]\+/ /'`)
+{
+  chomp $diff;
+  if ($diff=~/^.\s+([^\/]+\/[^\/]+)\/[^\s]+$/o)
+  {
+    my $pack=$1;
+    if (!exists $upackages{$pack})
+    {
+      $upackages{$pack}=[];
+      if (!-e $pack){print ">> Package removed $pack\n";}
+    }
+    push @{$upackages{$pack}},$diff;
+  }
+}
+my @packages=sort keys %upackages;
 
 foreach my $package (@packages) {
-    next if ($package =~/^UserCode.*/o);
-    my $reltag=$ENV{CMSSW_VERSION};
+    next if ($package =~/^UserCode.*/o);    
     print ">> Checking $package $reltag\n";
-    my $diffs=`git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r $reltag $package | grep -v .gitignore | sed -e 's/[ \t]\+/ /'`;
-    my @diffs=split('\n',$diffs);
+    my @diffs=$upackages{$package};
     my %msgs=("-" => {}, "x" => {});
-    foreach my $diff (@diffs) {
+    foreach my $diff (@{$upackages{$package}}) {
         my $del = 0;
         if ( ($diff =~/^(M)/o) || ($diff =~/^(U)/o) || ($diff =~/^(D)/o) ) {
             if ($1 eq "D"){$del =1;}
@@ -152,7 +162,6 @@ foreach my $package (@packages) {
         if ($diff) {$msgs{"x"}{$diff}=1;}
         if ($del)  {$msgs{"-"}{$diff}=1;}
     }
-    &checkDeleted($package,"${localtop}/src","${releasetop}/src",$msgs{"-"});
     my @files=sort keys %{$msgs{"-"}};
     push(@deletedFiles,@files);
     push(@changedFiles,@files);
@@ -247,26 +256,5 @@ sub poisonIncludes() {
         print $ref "#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n";
         close($ref);
         print "   $file\n";
-    }
-}
-
-sub checkDeleted() {
-    my ($rpath,$dev,$rel,$deleted,$add)=@_;
-    my $rdir="${rel}/${rpath}";
-    if (-d "$rdir") {
-        my $ref;
-        if(!opendir($ref,"$rdir")){die "ERROR: Can not open directory: $rdir\n";}
-        my @files=readdir($ref);
-        closedir($ref);
-        foreach my $f (@files) {
-            if (($f eq "doc") || ($f eq "CVS") || ($f eq "html") || ($f=~/^\./o) || ($f=~/\.pyc/o) || ($f=~/^__init__\.py/o)){next;}
-            my $rfile="${rpath}/${f}";
-            if (-d "${rdir}/${f}") {
-                my $radd=$add;
-                if (!-e "${dev}/${rfile}"){$radd=1;}
-                &checkDeleted($rfile,$dev,$rel,$deleted,$radd);
-            }
-            elsif($add || (!-e "${dev}/${rfile}")){$deleted->{$rfile}=1;}
-        }
     }
 }
