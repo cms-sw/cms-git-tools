@@ -60,32 +60,33 @@ while [ "$#" != 0 ]; do
   esac
 done
 
-GITHUB_USERNAME="`git config --global --get user.github || true`"
-if [ "X$GITHUB_USERNAME" = X ]; then
-  echo "Cannot find your GitHub information."
-  echo "Please register at"
-  echo
-  echo "https://github.com"
-  echo
-  echo "and then configure git via:"
-  echo
-  echo "git config --global user.github <your github username>"
-  exit 1
-fi
+# check the user details in the git configuration
 USER_FULLNAME="`git config --global --get user.name || true`"
-if [ "X$USER_FULLNAME" = X ]; then
-  echo "Cannot find your name in git configuration."
-  echo "Please set it up via:"
-  echo
-  echo "git config --global user.name <your name> <your last name>"
-  exit 1
-fi
 USER_EMAIL="`git config --global --get user.email || true`"
-if [ "X$USER_EMAIL" = X ]; then
-  echo "Cannot find your email in git configuration."
-  echo "Please set it up via:"
-  echo
-  echo "git config --global user.email <your e-mail>"
+GITHUB_USERNAME="`git config --global --get user.github || true`"
+if [ -z "$GITHUB_USERNAME" ] || [ -z "$USER_FULLNAME" ] || [ -z "$USER_EMAIL" ]; then
+  echo "Cannot find your details in the git configuration."
+  if [ "X$USER_FULLNAME" = X ]; then
+    echo
+    echo "Please set up your full name via:"
+    echo
+    echo "    git config --global user.name '<your name> <your last name>'"
+    echo
+  fi
+  if [ "X$USER_EMAIL" = X ]; then
+    echo
+    echo "Please set up your email via:"
+    echo
+    echo "    git config --global user.email '<your e-mail>'"
+    echo
+  fi
+  if [ "X$GITHUB_USERNAME" = X ]; then
+    echo
+    echo "Please set up your GitHub user name via:"
+    echo
+    echo "    git config --global user.github <your github username>"
+    echo
+  fi
   exit 1
 fi
 
@@ -223,6 +224,49 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
 fi
 
+# check the user setup on GitHub
+if curl -s "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
+  $ECHO "You don't seem to have a GitHub accout, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
+  $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct."                                                     > $VERBOSE_STREAM
+  $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
+  $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO "You can correct your GitHub user name via:"                                                        > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO "    git config --global user.github <your github username>"                                        > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO "To create a personal repository:"                                                                  > $VERBOSE_STREAM
+  $ECHO "    visit to https://github.com/ and register a new account"                                       > $VERBOSE_STREAM
+  $ECHO "    visit to https://github.com/cms-sw/cmssw and click on the Fork button"                         > $VERBOSE_STREAM
+  $ECHO "    select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  USER_CMSSW_REPO=""
+elif ! curl -s "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
+  $ECHO "You don't seem to have a personal repository, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
+  $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
+  $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO "You can correct your GitHub user name via:"                                                        > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO "    git config --global user.github <your github username>"                                        > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  $ECHO "To create a personal repository:"                                                                  > $VERBOSE_STREAM
+  $ECHO "  - go to https://github.com/ and log in"                                                          > $VERBOSE_STREAM
+  $ECHO "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"                            > $VERBOSE_STREAM
+  $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  USER_CMSSW_REPO=""
+elif ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
+  $ECHO "Your GitHub account ($RED$GITHUB_USERNAME$NORMAL) and personal repository ($RED$USER_CMSSW_REPO$NORMAL) " > $VERBOSE_STREAM
+  $ECHO "look properly configured, but git is unable to access it."                                         > $VERBOSE_STREAM
+  $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
+  $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
+  $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  USER_CMSSW_REPO=""
+fi
+
 mkdir -p $CMSSW_BASE/src
 cd $CMSSW_BASE/src
 if [ ! -d "$CMSSW_BASE/src/.git" ]; then
@@ -243,20 +287,11 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   git symbolic-ref HEAD refs/heads/from-$CMSSW_TAG
 
   # check if the user's remote repository exists
-  if git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
+  if [ "$USER_CMSSW_REPO" ]; then
     # add the user's remote repository
     git remote add my-cmssw $USER_CMSSW_REPO
     git fetch my-cmssw                2> $VERBOSE_STREAM
     git fetch my-cmssw --tags         2> $VERBOSE_STREAM
-  else
-    $ECHO                                                                                                   > $VERBOSE_STREAM
-    $ECHO "You don't seem to have a personal repository on GitHub, or your GitHub username "                > $VERBOSE_STREAM
-    $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct. You can work locally, but you will not be able "   > $VERBOSE_STREAM
-    $ECHO "to push your changes to GitHub for inclusion in the official CMSSW distribution."                > $VERBOSE_STREAM
-    $ECHO "To create a personal repository:"                                                                > $VERBOSE_STREAM
-    $ECHO "  - go to https://github.com/ and log in"                                                        > $VERBOSE_STREAM
-    $ECHO "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"                          > $VERBOSE_STREAM
-    $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"  > $VERBOSE_STREAM
   fi
 
   # setup sparse checkout
