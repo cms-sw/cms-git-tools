@@ -234,8 +234,8 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
 fi
 
 # check if the user has explicitly configured a remote repository
-if git config remote.origin.url >& /dev/null; then
-  USER_CMSSW_REPO=`git config remote.origin.url`
+if git config remote.my-cmssw.url >& /dev/null; then
+  USER_CMSSW_REPO=`git config remote.my-cmssw.url`
   CUSTOM_REMOTE=true
 
   if [ "X$USE_HTTPS_ACCESS_METHOD" = Xtrue ]; then
