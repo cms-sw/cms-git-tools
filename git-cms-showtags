@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+from optparse import OptionParser
+from commands import getstatusoutput
+from os import environ
+from os.path import join, exists
+from sys import exit
+
+def format(s, **kwds):
+  return s % kwds
+
+if __name__ == "__main__":
+  parser = OptionParser()
+  opts, args = parser.parse_args()
+  if not "CMSSW_VERSION" in environ:
+    parser.error("You do not have CMSSW environment setup. Please do cmsenv.")
+  if not "CMSSW_BASE" in environ:
+    parser.error("You need to be in a CMSSW workarea for this. Create one with scram project CMSSW_X_Y_Z.")
+  # If no git area is found. We are in a vanilla area.
+  if not exists(join(environ["CMSSW_BASE"], "src/.git")):
+    parser.error("You do not have any code checked out WRT the release")
+
+  cmd = "cd $CMSSW_BASE/src ; git ls-tree --abbrev -d -r %(tag)s"
+  error, out = getstatusoutput(format(cmd, tag="HEAD"))
+  if error:
+    parser.error("Error while getting tags for current version of CMSSW: $CMSSW_VERSION")
+  lines = [x.replace("\t", " ") for x in out.split("\n") if x.count("/") == 1]
+  table = [x.split(" ") for x in lines if x]
+  baseTags = dict([(x[3], x[2]) for x in table])
+
+  error, out = getstatusoutput(format(cmd, tag=environ["CMSSW_VERSION"]))
+  if error:
+    parser.error("Error while getting tags for current version of CMSSW: $CMSSW_VERSION")
+  lines = [x.replace("\t", " ") for x in out.split("\n") if x.count("/") == 1]
+  table = [x.split(" ") for x in lines if x]
+  newTags = dict([(x[3], x[2]) for x in table])
+  
+  minPkg = max([len(x) for x in baseTags])
+  minTag = max([len(x) for x in baseTags.itervalues()])
+
+  for (k,v) in sorted(baseTags.iteritems()):
+    if not k in newTags:
+      print format("%(package)s\t%(old)s\t%(new)s",
+                   package=k.ljust(minPkg, " "),
+                   old=v.ljust(minTag, " "),
+                   new="REMOVED")
+      continue
+    if newTags[k] == v:
+      continue
+    print format("%(package)s\t%(old)s\t%(new)s",
+                 package=k.ljust(minPkg, " "),
+                 old=v.ljust(minTag, " "),
+                 new=newTags[k])

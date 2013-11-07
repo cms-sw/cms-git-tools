@@ -1,0 +1,15 @@
+.TH GIT_CMS_SHOWTAGS 1 LOCAL
+
+.SH NAME
+
+git-cms-showtags - Show which packages have changed with respect to the release.
+
+.SH SYNOPSIS
+
+.B git cms-showtags
+
+.SH DESCRIPTION
+
+When invoked it will show the packages in the current area which have changed
+with respect to the release and a unique identifier (a git tree object hash)
+for the old and new version.
