@@ -140,12 +140,6 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
 fi
 
-# refresh the local repository
-[ -n "$CMSSW_MIRROR" ] && git remote set-url official-cmssw $CMSSW_MIRROR
-git fetch official-cmssw        2> $VERBOSE_STREAM
-git fetch official-cmssw --tags 2> $VERBOSE_STREAM
-[ -n "$CMSSW_MIRROR" ] && git remote set-url official-cmssw $OFFICIAL_CMSSW_REPO
-
 if [ "$INPUT_FILE" ]; then
   verbose "Checking out packages"
   verbose "`cat "$INPUT_FILE"`"
