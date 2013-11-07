@@ -1,9 +1,11 @@
-#!/bin/sh -e
-# Mimics addpkg behavior in git.
+#!/bin/bash -e
+# Initialises a local git repository for use with the official cmssw github remote and the user's github remote repositories
+
 case `uname` in 
   Darwin) ECHO=echo ;;
   *) ECHO="echo -e" ;;
 esac
+
 usage () {
   echo "git cms-init [options] [release]"
   echo
@@ -11,6 +13,7 @@ usage () {
   $ECHO "-h                 \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
+  $ECHO "    --check        \trun additional checks on the status of the user repository"
   $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
   $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
   $ECHO "-q, --quiet, -z    \tdo not print out progress"
@@ -18,10 +21,13 @@ usage () {
   exit $1
 }
 
+# configuration
+CHECK=0
 VERBOSE=1
 VERBOSE_STREAM=/dev/stderr
 DEBUG_STREAM=/dev/null
 
+# colors and formatting
 RED='\033[31m'
 NORMAL='\033[0m'
 
@@ -36,6 +42,8 @@ while [ "$#" != 0 ]; do
   case "$1" in
     -h | --help )
       usage 0;;
+    --check )
+      shift; CHECK=1 ;;
     -d | --debug )
       shift; set -x; DEBUG_STREAM=/dev/stderr ;;
     -q | --quiet | -z )
@@ -258,7 +266,7 @@ elif ! curl -s "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBU
   $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
   $ECHO ""                                                                                                  > $VERBOSE_STREAM
   USER_CMSSW_REPO=""
-elif ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
+elif ((CHECK == 1)) && ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
   $ECHO "Your GitHub account ($RED$GITHUB_USERNAME$NORMAL) and personal repository ($RED$USER_CMSSW_REPO$NORMAL) " > $VERBOSE_STREAM
   $ECHO "look properly configured, but git is unable to access it."                                         > $VERBOSE_STREAM
   $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM

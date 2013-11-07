@@ -106,7 +106,10 @@ if [ "$INPUT_FILE" ]; then
 fi
 
 # initialize the local repository
-git cms-init $INITOPTIONS
+if ! [ -d $CMSSW_BASE/src/.git ]; then
+  git cms-init $INITOPTIONS
+fi
+
 cd $CMSSW_BASE/src
 
 GITHUB_USERNAME="`git config --global --get user.github || true`"
