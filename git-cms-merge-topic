@@ -84,7 +84,12 @@ if [ X$BRANCH = X ]; then
 fi
 
 PULL_ID=$1
-git cms-init --quiet
+
+# initialize the local repository
+if ! [ -d $CMSSW_BASE/src/.git ]; then
+  git cms-init $INITOPTIONS
+fi
+
 cd $CMSSW_BASE/src
 # Fetch the branch specified from github and replace merge-attempt with it. 
 # The + is used to force the merge-attampt branch to be updated.
