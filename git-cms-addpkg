@@ -106,6 +106,10 @@ if [ "$INPUT_FILE" ]; then
 fi
 
 # initialize the local repository
+if [ -z "$CMSSW_BASE" ]; then
+  echo "CMSSW environment not setup, please run 'cmsenv' before 'git cms-addpkg'."
+  exit 1
+fi
 if ! [ -d $CMSSW_BASE/src/.git ]; then
   git cms-init $INITOPTIONS
 fi
