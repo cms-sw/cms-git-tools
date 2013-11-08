@@ -333,4 +333,13 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   git read-tree -mu HEAD
 fi
 
+# Avoid asking for password for 24 hours.
+GIT_CREDENTIAL_CACHE="`git config --get credential.cache || true`"
+if [ "X$GIT_CREDENTIAL_CACHE" = X ]; then
+  case `uname` in
+    Darwin*) git config --add credential.cache osxkeychain ;;
+    Linux*) git config --add credential.cache "cache --timeout=86400 --socket $TMPDIR/.git-credential-cache-socket" ;;
+  esac
+fi
+
 verbose You are on branch `git symbolic-ref --short HEAD`
