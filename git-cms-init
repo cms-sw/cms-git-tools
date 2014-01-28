@@ -239,9 +239,23 @@ if git config remote.my-cmssw.url >& /dev/null; then
   CUSTOM_REMOTE=true
 
   if [ "X$USE_HTTPS_ACCESS_METHOD" = Xtrue ]; then
+    USE_HTTPS_ACCESS_METHOD=
     $ECHO "Attention: the --https option will be ignored since you have explicitly configured a"              > $VERBOSE_STREAM
     $ECHO "'my-cmssw' remote repository: $RED$USER_CMSSW_REPO$NORMAL"                                         > $VERBOSE_STREAM
   fi
+fi
+
+# check if we can access GitHub over https
+if [ ! "$USE_SSH_ACCESS_METHOD" ] && ! curl -L -s "https://api.github.com/meta" > /dev/null; then
+  # unable to contact GitHub over https, switching to ssh
+  $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
+  USE_HTTPS_ACCESS_METHOD=
+  USE_SSH_ACCESS_METHOD=true
+  OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
+fi
+
+# check if the user repository is accessible
+if [ "$CUSTOM_REMOTE" ] || [ "$USE_SSH_ACCESS_METHOD" ]; then
 
   if [ "$CHECK" ] && ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
     $ECHO "Attention: git is unable to access your 'my-cmssw' remote repository ($RED$USER_CMSSW_REPO$NORMAL). " > $VERBOSE_STREAM
@@ -253,7 +267,7 @@ if git config remote.my-cmssw.url >& /dev/null; then
 else
 
   # check the user setup on GitHub
-  if curl -s "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
+  if curl -L -s "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
     $ECHO "You don't seem to have a GitHub accout, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
     $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct."                                                     > $VERBOSE_STREAM
     $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
@@ -270,7 +284,7 @@ else
     $ECHO "    select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
     $ECHO ""                                                                                                  > $VERBOSE_STREAM
     USER_CMSSW_REPO=""
-  elif ! curl -s "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
+  elif ! curl -L -s "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
     $ECHO "You don't seem to have a personal repository, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
     $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
     $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
