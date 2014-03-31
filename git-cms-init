@@ -179,6 +179,28 @@ case `git --version` in
   ;;
 esac
 
+# check if the user has explicitly configured a remote repository
+if git config remote.my-cmssw.url >& /dev/null; then
+  USER_CMSSW_REPO=`git config remote.my-cmssw.url`
+  CUSTOM_REMOTE=true
+
+  if [ "X$USE_HTTPS_ACCESS_METHOD" = Xtrue ]; then
+    USE_HTTPS_ACCESS_METHOD=
+    $ECHO "Attention: the --https option will be ignored since you have explicitly configured a"              > $VERBOSE_STREAM
+    $ECHO "'my-cmssw' remote repository: $RED$USER_CMSSW_REPO$NORMAL"                                         > $VERBOSE_STREAM
+  fi
+fi
+
+# check if we can access GitHub over https
+if [ ! "$USE_SSH_ACCESS_METHOD" ] && ! curl -L -s "https://api.github.com/meta" > /dev/null; then
+  # unable to contact GitHub over https, switching to ssh
+  $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
+  USE_HTTPS_ACCESS_METHOD=
+  USE_SSH_ACCESS_METHOD=true
+  OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
+fi
+
+# check if a shared reference repository is available, otherwise set up a personal one
 if [ "X$CMSSW_GIT_REFERENCE" = X ]; then
   case `hostname -f` in
     *.cern.ch)
@@ -231,27 +253,6 @@ fi
 # if using a personal reference repository, update it from the official one
 if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
-fi
-
-# check if the user has explicitly configured a remote repository
-if git config remote.my-cmssw.url >& /dev/null; then
-  USER_CMSSW_REPO=`git config remote.my-cmssw.url`
-  CUSTOM_REMOTE=true
-
-  if [ "X$USE_HTTPS_ACCESS_METHOD" = Xtrue ]; then
-    USE_HTTPS_ACCESS_METHOD=
-    $ECHO "Attention: the --https option will be ignored since you have explicitly configured a"              > $VERBOSE_STREAM
-    $ECHO "'my-cmssw' remote repository: $RED$USER_CMSSW_REPO$NORMAL"                                         > $VERBOSE_STREAM
-  fi
-fi
-
-# check if we can access GitHub over https
-if [ ! "$USE_SSH_ACCESS_METHOD" ] && ! curl -L -s "https://api.github.com/meta" > /dev/null; then
-  # unable to contact GitHub over https, switching to ssh
-  $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
-  USE_HTTPS_ACCESS_METHOD=
-  USE_SSH_ACCESS_METHOD=true
-  OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
 fi
 
 # check if the user repository is accessible
