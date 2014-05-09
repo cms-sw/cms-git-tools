@@ -117,8 +117,11 @@ fi
 
 if [ "X$CMSSW_TAG" = X ]; then
   if [ "$CURRENT_BRANCH" ]; then
-    verbose No release tags specified, using current branch $CURRENT_BRANCH
+    verbose No release tags specified, using current branch $CURRENT_BRANCH.
     CMSSW_TAG=$CURRENT_TAG
+  elif [ "$CMSSW_GIT_HASH" ]; then
+    verbose No release tags specified, using default $CMSSW_GIT_HASH.
+    CMSSW_TAG=$CMSSW_GIT_HASH
   else
     verbose No release tags specified, using default $CMSSW_VERSION.
     CMSSW_TAG=$CMSSW_VERSION
