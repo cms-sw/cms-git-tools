@@ -1,6 +1,5 @@
 #!/bin/sh -e
 
-
 usage () {
   
   case `uname` in
@@ -95,14 +94,23 @@ if ! [ -d $CMSSW_BASE/src/.git ]; then
 fi
 
 cd $CMSSW_BASE/src
+git fetch . +HEAD:merge-attempt || { echo "You are on a failed merge branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
+
+if [ "X$USE_SSH_ACCESS_METHOD" = X ]; then
+  REPOSITORY=https://github.com/$GITHUB_USER/cmssw.git
+else
+  REPOSITORY=git@github.com:$GITHUB_USER/cmssw.git
+fi
+
+# check if the "branch" is actually an annotated tag, and dereference it
+COMMIT=`git ls-remote -t $REPOSITORY $BRANCH^{} | cut -c -40`
+if [ -z "$COMMIT" ]; then
+  COMMIT=$BRANCH
+fi
+
 # Fetch the branch specified from github and replace merge-attempt with it. 
 # The + is used to force the merge-attampt branch to be updated.
-git fetch . +HEAD:merge-attempt || { echo "You are on a failed merge branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
-if [ "X$USE_SSH_ACCESS_METHOD" = X ]; then
-  git fetch https://github.com/$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANCH
-else
-  git fetch git@github.com:$GITHUB_USER/cmssw.git +$BRANCH:$GITHUB_USER/$BRANCH
-fi
+git fetch -n $REPOSITORY +$COMMIT:$GITHUB_USER/$BRANCH
 # Save the name of the current branch.
 CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 # Attempt a merge in a separate branch
