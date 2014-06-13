@@ -52,14 +52,26 @@ cat << @EOF
 Usage:
   `basename $0` HOST PORT
 
-Connect to a Git repository at host HOST and port PORT through a SOCKS proxy at $proxy ($from).
+Helper script to connect to a Git repository at host HOST and port PORT through a SOCKS proxy at $proxy ($from).
+
+To use the proxy for all git traffic, set the core.gitproxy option to "git-proxy":
+
+  git config core.gitproxy "git-proxy"
+
+
+To use the proxy only for some reporitories, use the syntax explained in git-config(1).
+
+To configure which proxy to use, set an appropriate environment variable (see below) or socks.proxy option to the proxy address, for example "localhost:1080":
+
+  git config socks.proxy "localhost:1080"
+
 
 The address of the proxy is read from (in order of priority):
-  - the GIT_SOCKS_PROXY environment variable
-  - the SOCKS_PROXY or SOCKS5_PROXY environment variable
-  - the ALL_PROXY environment variable (see curl(1))
-  - the socks.proxy git option
-  - the default value: localhost:1080
+  - the GIT_SOCKS_PROXY environment variable;
+  - the SOCKS_PROXY or SOCKS5_PROXY environment variable;
+  - the ALL_PROXY environment variable (see curl(1));
+  - the socks.proxy git option;
+  - the default value: localhost:1080 .
 @EOF
 }
 
