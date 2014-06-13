@@ -1,0 +1,72 @@
+#! /bin/bash
+
+# connect to the Git repository through a SOCKS proxy
+
+
+# default setting is to use port 1080 on the local host
+proxy="localhost:1080"
+from="default"
+
+# check if there is a value in the git configuration
+if git config --get socks.proxy; then
+    proxy=`git config --get socks.proxy`
+    from="git's socks.proxy"
+fi
+
+# check if a generic proxy has been defined in the environment
+if [ -n "$ALL_PROXY" ]; then
+    proxy="$ALL_PROXY"
+    from="\$ALL_PROXY"
+fi
+if [ -n "$all_proxy" ]; then
+    proxy="$all_proxy"
+    from="\$all_proxy"
+fi
+
+# check if a SOCKS proxy has been defined in the environment
+if [ -n "$SOCKS_PROXY" ]; then
+    proxy="$SOCKS_PROXY"
+    from="\$SOCKS_PROXY"
+fi
+if [ -n "$socks_proxy" ]; then
+    proxy="$socks_proxy"
+    from="\$socks_proxy"
+fi
+if [ -n "$SOCKS5_PROXY" ]; then
+    proxy="$SOCKS5_PROXY"
+    from="\$SOCKS5_PROXY"
+fi
+if [ -n "$socks5_proxy" ]; then
+    proxy="$socks5_proxy"
+    from="\$socks5_proxy"
+fi
+
+# check if a git specific SOCKS proxy has been defined in the environment
+if [ -n "$GIT_SOCKS_PROXY" ]; then
+    proxy="$GIT_SOCKS_PROXY"
+    from="\$GIT_SOCKS_PROXY"
+fi
+
+function usage() {
+cat << @EOF
+Usage:
+  `basename $0` HOST PORT
+
+Connect to a Git repository at host HOST and port PORT through a SOCKS proxy at $proxy ($from).
+
+The address of the proxy is read from (in order of priority):
+  - the GIT_SOCKS_PROXY environment variable
+  - the SOCKS_PROXY or SOCKS5_PROXY environment variable
+  - the ALL_PROXY environment variable (see curl(1))
+  - the socks.proxy git option
+  - the default value: localhost:1080
+@EOF
+}
+
+if [ -z "$1" ] || [ -z "$2" ] || [ -n "$3" ]; then
+  usage
+  exit 1
+fi
+
+# connect through the specifid proxy
+nc -x "$proxy" "$1" "$2"
