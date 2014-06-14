@@ -15,6 +15,10 @@ if __name__ == "__main__":
     parser.error("You do not have CMSSW environment setup. Please do cmsenv.")
   if not "CMSSW_BASE" in environ:
     parser.error("You need to be in a CMSSW workarea for this. Create one with scram project CMSSW_X_Y_Z.")
+  if 'CMSSW_GIT_HASH' in environ:
+    cmssw_tag = environ['CMSSW_GIT_HASH']
+  else:
+    cmssw_tag = environ['CMSSW_VERSION']
   # If no git area is found. We are in a vanilla area.
   if not exists(join(environ["CMSSW_BASE"], "src/.git")):
     parser.error("You do not have any code checked out WRT the release")
@@ -22,14 +26,14 @@ if __name__ == "__main__":
   cmd = "cd $CMSSW_BASE/src ; git ls-tree --abbrev -d -r %(tag)s"
   error, out = getstatusoutput(format(cmd, tag="HEAD"))
   if error:
-    parser.error("Error while getting tags for current version of CMSSW: $CMSSW_VERSION")
+    parser.error("Error while getting tags for the current working area")
   lines = [x.replace("\t", " ") for x in out.split("\n") if x.count("/") == 1]
   table = [x.split(" ") for x in lines if x]
   baseTags = dict([(x[3], x[2]) for x in table])
 
-  error, out = getstatusoutput(format(cmd, tag=environ["CMSSW_VERSION"]))
+  error, out = getstatusoutput(format(cmd, tag = cmssw_tag))
   if error:
-    parser.error("Error while getting tags for current version of CMSSW: $CMSSW_VERSION")
+    parser.error("Error while getting tags for this CMSSW release, %s" % cmssw_tag)
   lines = [x.replace("\t", " ") for x in out.split("\n") if x.count("/") == 1]
   table = [x.split(" ") for x in lines if x]
   newTags = dict([(x[3], x[2]) for x in table])
