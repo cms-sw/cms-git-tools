@@ -8,7 +8,7 @@ proxy="localhost:1080"
 from="default"
 
 # check if there is a value in the git configuration
-if git config --get socks.proxy; then
+if git config --get socks.proxy >& /dev/null; then
     proxy=`git config --get socks.proxy`
     from="git's socks.proxy"
 fi
