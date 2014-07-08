@@ -181,18 +181,22 @@ fi
 if [ "$PROTOCOL" = "ssh" ]; then
   OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
   USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
+  USER_CMSSW_REPO_PUSH=git@github.com:$GITHUB_USERNAME/cmssw.git
 elif [ "$PROTOCOL" = "https" ]; then
   OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
   USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
+  USER_CMSSW_REPO_PUSH=https://github.com/$GITHUB_USERNAME/cmssw.git
 elif [ "$PROTOCOL" = "mixed" ]; then
   OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
   USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
+  USER_CMSSW_REPO_PUSH=git@github.com:$GITHUB_USERNAME/cmssw.git
 fi
 
 # check if the user has explicitly configured a remote repository
 if git config remote.my-cmssw.url >& /dev/null; then
   CUSTOM_REMOTE=true
   USER_CMSSW_REPO=`git config remote.my-cmssw.url`
+  USER_CMSSW_REPO_PUSH="$USER_CMSSW_REPO"
   $ECHO "Attention: using the 'my-cmssw' remote from your git configuration: $RED$USER_CMSSW_REPO$NORMAL"     > $VERBOSE_STREAM
 fi
 
@@ -332,6 +336,7 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
     if ! [ "$CUSTOM_REMOTE" ]; then
       # add the user's remote repository
       git remote add my-cmssw $USER_CMSSW_REPO
+      git remote set-url --push my-cmssw $USER_CMSSW_REPO_PUSH
     fi
     git fetch my-cmssw              2> $VERBOSE_STREAM
     git fetch my-cmssw --tags       2> $VERBOSE_STREAM
