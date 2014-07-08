@@ -24,6 +24,7 @@ usage () {
 # configuration
 CHECK=
 CUSTOM_REMOTE=
+PROTOCOL=mixed
 VERBOSE=1
 VERBOSE_STREAM=/dev/stderr
 DEBUG_STREAM=/dev/null
@@ -52,9 +53,9 @@ while [ "$#" != 0 ]; do
     -y | --yes )
       shift; ASSUME_YES=1 ;;
     --https )
-      shift; USE_HTTPS_ACCESS_METHOD=true ;;
+      shift; PROTOCOL=https ;;
     --ssh )
-      shift; USE_SSH_ACCESS_METHOD=true ;;
+      shift; PROTOCOL=ssh ;;
     -*)
       echo Unknown option $1 ; usage 1 ;;
     *)
@@ -159,49 +160,44 @@ esac
 
 case `git --version` in 
   git\ version\ 1.7*)
-    OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
-    USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
+    # make the reference checkout work on git 1.7.x (see commit d5ed1e3aa81f22f993c19073321ee65d2c46c0c5 to git-cms-addpkg)
+    PROTOCOL=ssh
     # git 1.7.x does not support a leading slash in .gitignore and .git/info/sparse-checkout
     LEADING_SLASH=
   ;;
   *)
-    if [ "X$USE_SSH_ACCESS_METHOD" = X ]; then
-      OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
-    else
-      OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
-    fi
-    if [ "X$USE_HTTPS_ACCESS_METHOD" = X ]; then
-      USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
-    else
-      USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
-    fi
     LEADING_SLASH=/
   ;;
 esac
 
-# check if the user has explicitly configured a remote repository
-if git config remote.my-cmssw.url >& /dev/null; then
-  USER_CMSSW_REPO=`git config remote.my-cmssw.url`
-  CUSTOM_REMOTE=true
-
-  if [ "X$USE_HTTPS_ACCESS_METHOD" = Xtrue ]; then
-    USE_HTTPS_ACCESS_METHOD=
-    $ECHO "Attention: the --https option will be ignored since you have explicitly configured a"              > $VERBOSE_STREAM
-    $ECHO "'my-cmssw' remote repository: $RED$USER_CMSSW_REPO$NORMAL"                                         > $VERBOSE_STREAM
-  fi
-fi
-
 # check if we can access GitHub over https
-if [ ! "$USE_SSH_ACCESS_METHOD" ] && ! curl -L -s "https://api.github.com/meta" > /dev/null; then
+if [ "$PROTOCOL" != "ssh" ] && ! curl -L -s "https://api.github.com/meta" > /dev/null; then
   # unable to contact GitHub over https, switching to ssh
   $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
-  USE_HTTPS_ACCESS_METHOD=
-  USE_SSH_ACCESS_METHOD=true
+  PROTOCOL=ssh
   OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
 fi
 
+if [ "$PROTOCOL" = "ssh" ]; then
+  OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
+  USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
+elif [ "$PROTOCOL" = "https" ]; then
+  OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
+  USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
+elif [ "$PROTOCOL" = "mixed" ]; then
+  OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
+  USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
+fi
+
+# check if the user has explicitly configured a remote repository
+if git config remote.my-cmssw.url >& /dev/null; then
+  CUSTOM_REMOTE=true
+  USER_CMSSW_REPO=`git config remote.my-cmssw.url`
+  $ECHO "Attention: using the 'my-cmssw' remote from your git configuration: $RED$USER_CMSSW_REPO$NORMAL"     > $VERBOSE_STREAM
+fi
+
 # check if a shared reference repository is available, otherwise set up a personal one
-if [ "X$CMSSW_GIT_REFERENCE" = X ]; then
+if [ "$CMSSW_GIT_REFERENCE" = "" ]; then
   case `hostname -f` in
     *.cern.ch)
       if [ -e /afs/cern.ch/cms/git-cmssw-mirror/cmssw.git ]; then
@@ -256,7 +252,7 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
 fi
 
 # check if the user repository is accessible
-if [ "$CUSTOM_REMOTE" ] || [ "$USE_SSH_ACCESS_METHOD" ]; then
+if [ "$CUSTOM_REMOTE" ] || [ "$PROTOCOL" = "ssh" ]; then
 
   if [ "$CHECK" ] && ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
     $ECHO "Attention: git is unable to access your 'my-cmssw' remote repository ($RED$USER_CMSSW_REPO$NORMAL). " > $VERBOSE_STREAM
@@ -320,7 +316,7 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   # start on the branch $CMSSW_BRANCH
   # do not checkout any files
   # import all remote tags
-  if [ -n "$CMSSW_GIT_REFERENCE" ]; then
+  if [ "$CMSSW_GIT_REFERENCE" ]; then
     git clone --branch $CMSSW_BRANCH --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
   else
     git clone --branch $CMSSW_BRANCH --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
@@ -337,8 +333,8 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
       # add the user's remote repository
       git remote add my-cmssw $USER_CMSSW_REPO
     fi
-    git fetch my-cmssw                2> $VERBOSE_STREAM
-    git fetch my-cmssw --tags         2> $VERBOSE_STREAM
+    git fetch my-cmssw              2> $VERBOSE_STREAM
+    git fetch my-cmssw --tags       2> $VERBOSE_STREAM
   fi
 
   # setup sparse checkout
