@@ -28,6 +28,8 @@ PROTOCOL=mixed
 VERBOSE=1
 VERBOSE_STREAM=/dev/stderr
 DEBUG_STREAM=/dev/null
+OAUTH_TOKEN=869cfb0477e0cae72fb233be5e1f02bd97905bad
+PROXY=`git config https.proxy` && PROXY="-x $PROXY"
 
 # colors and formatting
 RED='\033[31m'
@@ -171,7 +173,7 @@ case `git --version` in
 esac
 
 # check if we can access GitHub over https
-if [ "$PROTOCOL" != "ssh" ] && ! curl -L -s "https://api.github.com/meta" > /dev/null; then
+if [ "$PROTOCOL" != "ssh" ] && ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/meta" > /dev/null; then
   # unable to contact GitHub over https, switching to ssh
   $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
   PROTOCOL=ssh
@@ -268,7 +270,7 @@ if [ "$CUSTOM_REMOTE" ] || [ "$PROTOCOL" = "ssh" ]; then
 else
 
   # check the user setup on GitHub
-  if curl -L -s "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
+  if curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
     $ECHO "You don't seem to have a GitHub accout, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
     $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct."                                                     > $VERBOSE_STREAM
     $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
@@ -285,7 +287,7 @@ else
     $ECHO "    select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
     $ECHO ""                                                                                                  > $VERBOSE_STREAM
     USER_CMSSW_REPO=""
-  elif ! curl -L -s "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
+  elif ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
     $ECHO "You don't seem to have a personal repository, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
     $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
     $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
