@@ -1,15 +1,17 @@
 #!/bin/bash -e
 # Initialises a local git repository for use with the official cmssw github remote and the user's github remote repositories
 
-case `uname` in 
-  Darwin) ECHO=echo ;;
-  *) ECHO="echo -e" ;;
+case `uname` in
+  Darwin)
+    ECHO="echo" ;;
+  *)
+    ECHO="echo -e" ;;
 esac
 
 usage () {
-  echo "git cms-init [options] [release]"
-  echo
-  echo "Options:"
+  $ECHO "git cms-init [options] [release]"
+  $ECHO
+  $ECHO "Options:"
   $ECHO "-h                 \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
@@ -37,7 +39,7 @@ NORMAL='\033[0m'
 
 verbose () {
   if [ "X$VERBOSE" = X1 ]; then
-    echo "$@"
+    $ECHO "$@"
   fi
 }
 
@@ -59,12 +61,12 @@ while [ "$#" != 0 ]; do
     --ssh )
       shift; PROTOCOL=ssh ;;
     -*)
-      echo Unknown option $1 ; usage 1 ;;
+      $ECHO Unknown option $1 ; usage 1 ;;
     *)
       if [ "X$CMSSW_TAG" = X ]; then
         CMSSW_TAG=$1
       else
-        echo Unexpected argument $1
+        $ECHO Unexpected argument $1
         usage 1
       fi
       shift 1
@@ -77,27 +79,27 @@ USER_FULLNAME="`git config --global --get user.name || true`"
 USER_EMAIL="`git config --global --get user.email || true`"
 GITHUB_USERNAME="`git config --global --get user.github || true`"
 if [ -z "$GITHUB_USERNAME" ] || [ -z "$USER_FULLNAME" ] || [ -z "$USER_EMAIL" ]; then
-  echo "Cannot find your details in the git configuration."
+  $ECHO "Cannot find your details in the git configuration."
   if [ "X$USER_FULLNAME" = X ]; then
-    echo
-    echo "Please set up your full name via:"
-    echo
-    echo "    git config --global user.name '<your name> <your last name>'"
-    echo
+    $ECHO
+    $ECHO "Please set up your full name via:"
+    $ECHO
+    $ECHO "    git config --global user.name '<your name> <your last name>'"
+    $ECHO
   fi
   if [ "X$USER_EMAIL" = X ]; then
-    echo
-    echo "Please set up your email via:"
-    echo
-    echo "    git config --global user.email '<your e-mail>'"
-    echo
+    $ECHO
+    $ECHO "Please set up your email via:"
+    $ECHO
+    $ECHO "    git config --global user.email '<your e-mail>'"
+    $ECHO
   fi
   if [ "X$GITHUB_USERNAME" = X ]; then
-    echo
-    echo "Please set up your GitHub user name via:"
-    echo
-    echo "    git config --global user.github <your github username>"
-    echo
+    $ECHO
+    $ECHO "Please set up your GitHub user name via:"
+    $ECHO
+    $ECHO "    git config --global user.github <your github username>"
+    $ECHO
   fi
   exit 1
 fi
@@ -129,15 +131,15 @@ if [ "X$CMSSW_TAG" = X ]; then
 fi
 
 if [ "$CURRENT_BRANCH" ] && [ "$CURRENT_TAG" != "$CMSSW_TAG" ]; then
-  echo "Attention, you have requested a release tag $CMSSW_TAG, but your local git repository has been set up for $CURRENT_TAG."
-  echo "Aborting."
+  $ECHO "Attention: you have requested a release tag $CMSSW_TAG, but your local git repository has been set up for $CURRENT_TAG."
+  $ECHO "Aborting."
   exit 1
 fi
 
 CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
 
 # SLHC releases
-case $CMSSW_TAG in 
+case $CMSSW_TAG in
   *_SLHC*)
     CMSSW_BRANCH=${CMSSW_BASE_BRANCH}_X_SLHC ;;
   *)
@@ -151,16 +153,16 @@ esac
 #  eval `scram run -sh` >/dev/null
 #  IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
 #  if [ "X$IN_RELEASE" = X0 ]; then
-#    echo git cms-addpkg must be run from inside a CMSSW area.
+#    $ECHO git cms-addpkg must be run from inside a CMSSW area.
 #    exit 1
 #  else
-#    echo Error: You have currently set up the environment of $OLD_CMSSW_BASE, however you are running inside $CMSSW_BASE.
-#    echo Please go inside $OLD_CMSSW_BASE, or use cmsenv to switch to $CMSSW_BASE.
+#    $ECHO Error: You have currently set up the environment of $OLD_CMSSW_BASE, however you are running inside $CMSSW_BASE.
+#    $ECHO Please go inside $OLD_CMSSW_BASE, or use cmsenv to switch to $CMSSW_BASE.
 #    exit 1
 #  fi
 #fi
 
-case `git --version` in 
+case `git --version` in
   git\ version\ 1.7*)
     # make the reference checkout work on git 1.7.x (see commit d5ed1e3aa81f22f993c19073321ee65d2c46c0c5 to git-cms-addpkg)
     PROTOCOL=ssh
@@ -231,18 +233,18 @@ if [ ! -e $CMSSW_GIT_REFERENCE ]; then
         touch $CMSSW_GIT_REFERENCE/create-`whoami`
       ;;
       [?])
-        echo
-        echo Answering yes will create a new cache directory in \$CMSSW_GIT_REFERENCE:
-        echo
-        echo i.e. $CMSSW_GIT_REFERENCE
-        echo
-        echo and put there a copy of the official CMSSW repository. git cms-addpkg will then
-        echo reuse this information to keep your CMSSW workareas to a minimal size.
-        echo The initial checkout could take a few minutes, but all the others should then
-        echo take only a few seconds.
-        echo
-        echo Just say yes.
-        echo
+        $ECHO
+        $ECHO Answering yes will create a new cache directory in \$CMSSW_GIT_REFERENCE:
+        $ECHO
+        $ECHO i.e. $CMSSW_GIT_REFERENCE
+        $ECHO
+        $ECHO and put there a copy of the official CMSSW repository. git cms-addpkg will then
+        $ECHO reuse this information to keep your CMSSW workareas to a minimal size.
+        $ECHO The initial checkout could take a few minutes, but all the others should then
+        $ECHO take only a few seconds.
+        $ECHO
+        $ECHO Just say yes.
+        $ECHO
         QUESTION_DONE=
       ;;
       *)
