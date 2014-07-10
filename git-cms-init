@@ -176,10 +176,17 @@ esac
 
 # check if we can access GitHub over https
 if [ "$PROTOCOL" != "ssh" ] && ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/meta" > /dev/null; then
-  # unable to contact GitHub over https, switching to ssh
-  $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
-  PROTOCOL=ssh
-  OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
+  if [ "$PROTOCOL" = "https" ]; then
+    # unable to contact GitHub over https, aborting
+    $ECHO "Attention: git is unable to access GitHub over https, aborting."                                     > $VERBOSE_STREAM
+    $ECHO "You may want to retry with the --ssh option."                                                        > $VERBOSE_STREAM
+    exit 1
+  else
+    # unable to contact GitHub over https, switching to ssh
+    $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
+    PROTOCOL=ssh
+    OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
+  fi
 fi
 
 if [ "$PROTOCOL" = "ssh" ]; then
