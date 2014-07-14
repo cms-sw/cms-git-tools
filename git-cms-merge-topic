@@ -1,28 +1,33 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
-usage () {
-  
-  case `uname` in
-    Linux) ECHO="echo -e" ;;
-    *) ECHO="echo" ;;
-  esac
+case `uname` in
+  Linux) ECHO="echo -e" ;;
+  *) ECHO="echo" ;;
+esac
+
+usage() {
   $ECHO "git cms-merge-topic [options] <github-user>:<branch>"
   $ECHO "git cms-merge-topic [options] <official-cmssw-branch>"
   $ECHO "git cms-merge-topic [options] <pull-request-id>"
   $ECHO
   $ECHO "Options:"
-  $ECHO
-  $ECHO "-u/--unsafe           \tDo not perform checkdeps at the end"
-  $ECHO "-q/--quiet            \tBe completely quiet"
-  $ECHO "-v/--verbose          \tShow verbose output"
-  $ECHO "-d/--debug            \tShow debug information"
-  $ECHO "   --ssh              \tAccess github via ssh rather than https"
+  $ECHO "-d, --debug        \tenable debug output"
+  $ECHO "    --https        \taccess GitHub over https (default)"
+  $ECHO "    --ssh          \taccess GitHub over ssh"
+  $ECHO "-q, --quiet        \tbe completely quiet"
+  $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
+  $ECHO "-v, --verbose      \tshow verbose output"
   exit 1
 }
+
+# colors and formatting
+RED='\033[31m'
+NORMAL='\033[0m'
 
 NORMAL_STREAM=/dev/stdout
 VERBOSE_STREAM=/dev/stdout
 DEBUG_STREAM=/dev/null
+PROTOCOL=https
 
 while [ $# -gt 0 ]; do
   case $1 in 
@@ -50,9 +55,13 @@ while [ $# -gt 0 ]; do
       set -x
       shift
       ;;
+    --https )
+      PROTOCOL=https
+      shift
+      ;;
     --ssh )
-      USE_SSH_ACCESS_METHOD=true
-      shift; 
+      PROTOCOL=ssh
+      shift
       ;;
     -*)
       echo "Unknown option $1" ; exit 1 ;;
@@ -96,10 +105,15 @@ fi
 cd $CMSSW_BASE/src
 git fetch . +HEAD:merge-attempt || { echo "You are on a failed merge branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
 
-if [ "X$USE_SSH_ACCESS_METHOD" = X ]; then
-  REPOSITORY=https://github.com/$GITHUB_USER/cmssw.git
-else
+if [ "$(git status --porcelain)" ]; then
+  $ECHO "${RED}Warning: there are non-committed changes on your working tree${NORMAL}, please commit or stash them."
+  exit 1
+fi
+
+if [ "$PROTOCOL" = "ssh" ]; then
   REPOSITORY=git@github.com:$GITHUB_USER/cmssw.git
+else
+  REPOSITORY=https://github.com/$GITHUB_USER/cmssw.git
 fi
 
 # check if the "branch" is actually an annotated tag, and dereference it

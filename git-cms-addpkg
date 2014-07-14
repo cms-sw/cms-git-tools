@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # Mimics addpkg behavior in git.
 case `uname` in
   Darwin) ECHO=echo ;;
@@ -142,6 +142,11 @@ fi
 # if using a personal reference repository, update it from the official one
 if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
+fi
+
+if [ "$(git status --porcelain)" ]; then
+  $ECHO "${RED}Warning: there are non-committed changes on your working tree${NORMAL}, please commit or stash them."
+  exit 1
 fi
 
 if [ "$INPUT_FILE" ]; then
