@@ -1,15 +1,17 @@
 #!/bin/bash -e
 # Initialises a local git repository for use with the official cmssw github remote and the user's github remote repositories
 
-case `uname` in 
-  Darwin) ECHO=echo ;;
-  *) ECHO="echo -e" ;;
+case `uname` in
+  Darwin)
+    ECHO="echo" ;;
+  *)
+    ECHO="echo -e" ;;
 esac
 
 usage () {
-  echo "git cms-init [options] [release]"
-  echo
-  echo "Options:"
+  $ECHO "git cms-init [options] [release]"
+  $ECHO
+  $ECHO "Options:"
   $ECHO "-h                 \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
@@ -24,9 +26,12 @@ usage () {
 # configuration
 CHECK=
 CUSTOM_REMOTE=
+PROTOCOL=mixed
 VERBOSE=1
 VERBOSE_STREAM=/dev/stderr
 DEBUG_STREAM=/dev/null
+OAUTH_TOKEN=869cfb0477e0cae72fb233be5e1f02bd97905bad
+PROXY=`git config https.proxy` && PROXY="-x $PROXY"
 
 # colors and formatting
 RED='\033[31m'
@@ -34,7 +39,7 @@ NORMAL='\033[0m'
 
 verbose () {
   if [ "X$VERBOSE" = X1 ]; then
-    echo "$@"
+    $ECHO "$@"
   fi
 }
 
@@ -52,16 +57,16 @@ while [ "$#" != 0 ]; do
     -y | --yes )
       shift; ASSUME_YES=1 ;;
     --https )
-      shift; USE_HTTPS_ACCESS_METHOD=true ;;
+      shift; PROTOCOL=https ;;
     --ssh )
-      shift; USE_SSH_ACCESS_METHOD=true ;;
+      shift; PROTOCOL=ssh ;;
     -*)
-      echo Unknown option $1 ; usage 1 ;;
+      $ECHO Unknown option $1 ; usage 1 ;;
     *)
       if [ "X$CMSSW_TAG" = X ]; then
         CMSSW_TAG=$1
       else
-        echo Unexpected argument $1
+        $ECHO Unexpected argument $1
         usage 1
       fi
       shift 1
@@ -74,27 +79,27 @@ USER_FULLNAME="`git config --global --get user.name || true`"
 USER_EMAIL="`git config --global --get user.email || true`"
 GITHUB_USERNAME="`git config --global --get user.github || true`"
 if [ -z "$GITHUB_USERNAME" ] || [ -z "$USER_FULLNAME" ] || [ -z "$USER_EMAIL" ]; then
-  echo "Cannot find your details in the git configuration."
+  $ECHO "Cannot find your details in the git configuration."
   if [ "X$USER_FULLNAME" = X ]; then
-    echo
-    echo "Please set up your full name via:"
-    echo
-    echo "    git config --global user.name '<your name> <your last name>'"
-    echo
+    $ECHO
+    $ECHO "Please set up your full name via:"
+    $ECHO
+    $ECHO "    git config --global user.name '<your name> <your last name>'"
+    $ECHO
   fi
   if [ "X$USER_EMAIL" = X ]; then
-    echo
-    echo "Please set up your email via:"
-    echo
-    echo "    git config --global user.email '<your e-mail>'"
-    echo
+    $ECHO
+    $ECHO "Please set up your email via:"
+    $ECHO
+    $ECHO "    git config --global user.email '<your e-mail>'"
+    $ECHO
   fi
   if [ "X$GITHUB_USERNAME" = X ]; then
-    echo
-    echo "Please set up your GitHub user name via:"
-    echo
-    echo "    git config --global user.github <your github username>"
-    echo
+    $ECHO
+    $ECHO "Please set up your GitHub user name via:"
+    $ECHO
+    $ECHO "    git config --global user.github <your github username>"
+    $ECHO
   fi
   exit 1
 fi
@@ -129,15 +134,15 @@ if [ "X$CMSSW_TAG" = X ]; then
 fi
 
 if [ "$CURRENT_BRANCH" ] && [ "$CURRENT_TAG" != "$CMSSW_TAG" ]; then
-  echo "Attention, you have requested a release tag $CMSSW_TAG, but your local git repository has been set up for $CURRENT_TAG."
-  echo "Aborting."
+  $ECHO "Attention: you have requested a release tag $CMSSW_TAG, but your local git repository has been set up for $CURRENT_TAG."
+  $ECHO "Aborting."
   exit 1
 fi
 
 CMSSW_BASE_BRANCH=`echo $CMSSW_TAG | sed -e 's/\(CMSSW_[0-9][0-9]*_[0-9][0-9]*\).*/\1/'`
 
 # SLHC releases
-case $CMSSW_TAG in 
+case $CMSSW_TAG in
   *_SLHC*)
     CMSSW_BRANCH=${CMSSW_BASE_BRANCH}_X_SLHC ;;
   *)
@@ -151,38 +156,64 @@ esac
 #  eval `scram run -sh` >/dev/null
 #  IN_RELEASE=`echo $PWD | grep -q -e "^$CMSSW_BASE" 2> /dev/null && echo 1 || echo 0`
 #  if [ "X$IN_RELEASE" = X0 ]; then
-#    echo git cms-addpkg must be run from inside a CMSSW area.
+#    $ECHO git cms-addpkg must be run from inside a CMSSW area.
 #    exit 1
 #  else
-#    echo Error: You have currently set up the environment of $OLD_CMSSW_BASE, however you are running inside $CMSSW_BASE.
-#    echo Please go inside $OLD_CMSSW_BASE, or use cmsenv to switch to $CMSSW_BASE.
+#    $ECHO Error: You have currently set up the environment of $OLD_CMSSW_BASE, however you are running inside $CMSSW_BASE.
+#    $ECHO Please go inside $OLD_CMSSW_BASE, or use cmsenv to switch to $CMSSW_BASE.
 #    exit 1
 #  fi
 #fi
 
-case `git --version` in 
+case `git --version` in
   git\ version\ 1.7*)
-    OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
-    USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
+    # make the reference checkout work on git 1.7.x (see commit d5ed1e3aa81f22f993c19073321ee65d2c46c0c5 to git-cms-addpkg)
+    PROTOCOL=ssh
     # git 1.7.x does not support a leading slash in .gitignore and .git/info/sparse-checkout
     LEADING_SLASH=
   ;;
   *)
-    if [ "X$USE_SSH_ACCESS_METHOD" = X ]; then
-      OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
-    else
-      OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
-    fi
-    if [ "X$USE_HTTPS_ACCESS_METHOD" = X ]; then
-      USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
-    else
-      USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
-    fi
     LEADING_SLASH=/
   ;;
 esac
 
-if [ "X$CMSSW_GIT_REFERENCE" = X ]; then
+# check if we can access GitHub over https
+if [ "$PROTOCOL" != "ssh" ] && ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/meta" > /dev/null; then
+  if [ "$PROTOCOL" = "https" ]; then
+    # unable to contact GitHub over https, aborting
+    $ECHO "Attention: git is unable to access GitHub over https, aborting."                                     > $VERBOSE_STREAM
+    $ECHO "You may want to retry with the --ssh option."                                                        > $VERBOSE_STREAM
+    exit 1
+  else
+    # unable to contact GitHub over https, switching to ssh
+    $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
+    PROTOCOL=ssh
+    OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
+  fi
+fi
+
+if [ "$PROTOCOL" = "ssh" ]; then
+  OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
+  USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
+elif [ "$PROTOCOL" = "https" ]; then
+  OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
+  USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
+elif [ "$PROTOCOL" = "mixed" ]; then
+  OFFICIAL_CMSSW_REPO=https://github.com/cms-sw/cmssw.git
+  USER_CMSSW_REPO=https://github.com/$GITHUB_USERNAME/cmssw.git
+  USER_CMSSW_REPO_PUSH=git@github.com:$GITHUB_USERNAME/cmssw.git
+fi
+
+# check if the user has explicitly configured a remote repository
+if git config remote.my-cmssw.url >& /dev/null; then
+  CUSTOM_REMOTE=true
+  USER_CMSSW_REPO=`git config remote.my-cmssw.url`
+  USER_CMSSW_REPO_PUSH=`git config remote.my-cmssw.pushurl`
+  $ECHO "Attention: using the 'my-cmssw' remote from your git configuration: $RED$USER_CMSSW_REPO$NORMAL"     > $VERBOSE_STREAM
+fi
+
+# check if a shared reference repository is available, otherwise set up a personal one
+if [ "$CMSSW_GIT_REFERENCE" = "" ]; then
   case `hostname -f` in
     *.cern.ch)
       if [ -e /afs/cern.ch/cms/git-cmssw-mirror/cmssw.git ]; then
@@ -210,18 +241,18 @@ if [ ! -e $CMSSW_GIT_REFERENCE ]; then
         touch $CMSSW_GIT_REFERENCE/create-`whoami`
       ;;
       [?])
-        echo
-        echo Answering yes will create a new cache directory in \$CMSSW_GIT_REFERENCE:
-        echo
-        echo i.e. $CMSSW_GIT_REFERENCE
-        echo
-        echo and put there a copy of the official CMSSW repository. git cms-addpkg will then
-        echo reuse this information to keep your CMSSW workareas to a minimal size.
-        echo The initial checkout could take a few minutes, but all the others should then
-        echo take only a few seconds.
-        echo
-        echo Just say yes.
-        echo
+        $ECHO
+        $ECHO Answering yes will create a new cache directory in \$CMSSW_GIT_REFERENCE:
+        $ECHO
+        $ECHO i.e. $CMSSW_GIT_REFERENCE
+        $ECHO
+        $ECHO and put there a copy of the official CMSSW repository. git cms-addpkg will then
+        $ECHO reuse this information to keep your CMSSW workareas to a minimal size.
+        $ECHO The initial checkout could take a few minutes, but all the others should then
+        $ECHO take only a few seconds.
+        $ECHO
+        $ECHO Just say yes.
+        $ECHO
         QUESTION_DONE=
       ;;
       *)
@@ -236,29 +267,8 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
 fi
 
-# check if the user has explicitly configured a remote repository
-if git config remote.my-cmssw.url >& /dev/null; then
-  USER_CMSSW_REPO=`git config remote.my-cmssw.url`
-  CUSTOM_REMOTE=true
-
-  if [ "X$USE_HTTPS_ACCESS_METHOD" = Xtrue ]; then
-    USE_HTTPS_ACCESS_METHOD=
-    $ECHO "Attention: the --https option will be ignored since you have explicitly configured a"              > $VERBOSE_STREAM
-    $ECHO "'my-cmssw' remote repository: $RED$USER_CMSSW_REPO$NORMAL"                                         > $VERBOSE_STREAM
-  fi
-fi
-
-# check if we can access GitHub over https
-if [ ! "$USE_SSH_ACCESS_METHOD" ] && ! curl -L -s "https://api.github.com/meta" > /dev/null; then
-  # unable to contact GitHub over https, switching to ssh
-  $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
-  USE_HTTPS_ACCESS_METHOD=
-  USE_SSH_ACCESS_METHOD=true
-  OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
-fi
-
 # check if the user repository is accessible
-if [ "$CUSTOM_REMOTE" ] || [ "$USE_SSH_ACCESS_METHOD" ]; then
+if [ "$CUSTOM_REMOTE" ] || [ "$PROTOCOL" = "ssh" ]; then
 
   if [ "$CHECK" ] && ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
     $ECHO "Attention: git is unable to access your 'my-cmssw' remote repository ($RED$USER_CMSSW_REPO$NORMAL). " > $VERBOSE_STREAM
@@ -270,7 +280,7 @@ if [ "$CUSTOM_REMOTE" ] || [ "$USE_SSH_ACCESS_METHOD" ]; then
 else
 
   # check the user setup on GitHub
-  if curl -L -s "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
+  if curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
     $ECHO "You don't seem to have a GitHub accout, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
     $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct."                                                     > $VERBOSE_STREAM
     $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
@@ -287,7 +297,7 @@ else
     $ECHO "    select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
     $ECHO ""                                                                                                  > $VERBOSE_STREAM
     USER_CMSSW_REPO=""
-  elif ! curl -L -s "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
+  elif ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
     $ECHO "You don't seem to have a personal repository, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
     $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
     $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
@@ -322,7 +332,7 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   # start on the branch $CMSSW_BRANCH
   # do not checkout any files
   # import all remote tags
-  if [ -n "$CMSSW_GIT_REFERENCE" ]; then
+  if [ "$CMSSW_GIT_REFERENCE" ]; then
     git clone --branch $CMSSW_BRANCH --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
   else
     git clone --branch $CMSSW_BRANCH --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
@@ -338,9 +348,9 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
     if ! [ "$CUSTOM_REMOTE" ]; then
       # add the user's remote repository
       git remote add my-cmssw $USER_CMSSW_REPO
+      [ "$USER_CMSSW_REPO_PUSH" ] && git remote set-url --push my-cmssw $USER_CMSSW_REPO_PUSH
     fi
-    git fetch my-cmssw                2> $VERBOSE_STREAM
-    git fetch my-cmssw --tags         2> $VERBOSE_STREAM
+    git fetch my-cmssw --tags       2> $VERBOSE_STREAM
   fi
 
   # setup sparse checkout
