@@ -8,7 +8,7 @@ proxy="localhost:1080"
 from="default"
 
 # check if there is a value in the git configuration
-if git config --get socks.proxy; then
+if git config --get socks.proxy >& /dev/null; then
     proxy=`git config --get socks.proxy`
     from="git's socks.proxy"
 fi
@@ -52,9 +52,9 @@ cat << @EOF
 Usage:
   `basename $0` HOST PORT
 
-Helper script to connect to a Git repository at host HOST and port PORT through a SOCKS proxy at $proxy ($from).
+Helper script to connect to a Git repository over the git:// protocol at host HOST and port PORT through a SOCKS proxy at $proxy ($from).
 
-To use the proxy for all git traffic, set the core.gitproxy option to "git-proxy":
+To use the proxy for all git:// traffic, set the core.gitproxy option to "git-proxy":
 
   git config core.gitproxy "git-proxy"
 
