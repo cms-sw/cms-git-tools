@@ -179,7 +179,9 @@ foreach my $package (@packages) {
 if ($poison_only) {exit 0;}
 
 my %recompileList;
+my $big_bf="";
 foreach my $file (@changedFiles) {
+    if ($file=~/^BigProducts\/[^\/]+\/BuildFile\.xml$/o){$big_bf="${big_bf} ${file}";}
     next if (!(exists $vals{$file}));
     foreach my $dep (@{$vals{$file}}) {
         my @sp=split('/',$dep);
@@ -187,10 +189,26 @@ foreach my $file (@changedFiles) {
         if (!(grep {$_ eq $recompile} @packages)) {
             my $scope="header";
             if ($file=~/\.py$/o){$scope="python";}
-            elsif($file=~/BuildFile(\.xml|)$/o){$scope="buildfile";}
+            elsif($file=~/\/BuildFile(\.xml|)$/o){$scope="buildfile";}
             $recompileList{$recompile}{$scope}=$file;
         }
     }
+}
+
+if ($big_bf ne "")
+{
+  foreach my $diff (`git diff -r $reltag -- $big_bf | sed -e 's/[ \t]\+/ /' | grep '^+' | grep -i '< *use  *name *='`)
+  {
+    chomp $diff;
+    $diff=~s/^[+]//o;
+    foreach my $p (split(">",$diff))
+    {
+      if ($p=~/^\s*<\s*use\s+name\s*=\s*["]([^"]+)["]\s*/)
+      {
+	if (-e "${releasetop}/src/${1}"){$recompileList{$1}{biglib}="BigProducts";}
+      }
+    }
+  }
 }
 
 my @t=sort(keys %recompileList);
@@ -199,7 +217,7 @@ if ( $checkout == 0 ) {
     print "Packages to check out and compile: $len\n";
 }
 else{
-    print "Checking out these packages\n";
+    print "Checking out these packages: $len\n";
 }
 
 my $exitcode=0;
