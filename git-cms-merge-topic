@@ -16,6 +16,8 @@ usage() {
   $ECHO "    --ssh          \taccess GitHub over ssh"
   $ECHO "-q, --quiet        \tbe completely quiet"
   $ECHO "--no-commit        \tdo not do the final commit when merging"
+  $ECHO "-s, --strategy     \tspecify strategy when merging"
+  $ECHO "-X, --strategy-option     \tspecify strategy when merging"
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
   $ECHO "-v, --verbose      \tshow verbose output"
   exit 1
@@ -67,6 +69,14 @@ while [ $# -gt 0 ]; do
     --no-commit )
       NO_COMMIT=--no-commit 
       shift
+      ;;
+    -s | --strategy )
+      MERGE_STRATEGY="-s $2"
+      shift; shift
+      ;;
+    -X | --strategy-option )
+      STRATEGY_OPTION="-X $2"
+      shift; shift
       ;;
     -*)
       echo "Unknown option $1" ; exit 1 ;;
@@ -152,4 +162,3 @@ git branch -D merge-attempt >$DEBUG_STREAM || true
 if [ ! "X$UNSAFE" = Xtrue ]; then
   git cms-checkdeps -a
 fi
-
