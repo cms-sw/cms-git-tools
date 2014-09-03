@@ -15,6 +15,9 @@ usage() {
   $ECHO "    --https        \taccess GitHub over https (default)"
   $ECHO "    --ssh          \taccess GitHub over ssh"
   $ECHO "-q, --quiet        \tbe completely quiet"
+  $ECHO "--no-commit        \tdo not do the final commit when merging"
+  $ECHO "-s, --strategy     \tspecify strategy when merging"
+  $ECHO "-X, --strategy-option     \tspecify strategy when merging"
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
   $ECHO "-v, --verbose      \tshow verbose output"
   exit 1
@@ -62,6 +65,18 @@ while [ $# -gt 0 ]; do
     --ssh )
       PROTOCOL=ssh
       shift
+      ;;
+    --no-commit )
+      NO_COMMIT=--no-commit 
+      shift
+      ;;
+    -s | --strategy )
+      MERGE_STRATEGY="-s $2"
+      shift; shift
+      ;;
+    -X | --strategy-option )
+      STRATEGY_OPTION="-X $2"
+      shift; shift
       ;;
     -*)
       echo "Unknown option $1" ; exit 1 ;;
@@ -132,7 +147,10 @@ git checkout merge-attempt >$DEBUG_STREAM
 MERGE_BASE=`git merge-base $GITHUB_USER/$BRANCH $CURRENT_BRANCH`
 git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
 git read-tree -mu HEAD
-git merge --no-ff -m "Merged $BRANCH from repository $GITHUB_USER" $GITHUB_USER/$BRANCH || { echo "Unable to merge branch $BRANCH from repository $GITHUB_USER." ; exit 1; }
+git merge $NO_COMMIT $MERGE_STRATEGY $STRATEGY_OPTION --no-ff -m "Merged $BRANCH from repository $GITHUB_USER" $GITHUB_USER/$BRANCH || { echo "Unable to merge branch $BRANCH from repository $GITHUB_USER." ; exit 1; }
+if [ ! X$NO_COMMIT = X ]; then
+  echo \"--no-commit\" specified: not committing and leaving you on the merge-attempt branch.\n Use git-status to check changes. ; exit 0
+fi
 git checkout $CURRENT_BRANCH 
 # Add the missing files.
 git read-tree -mu HEAD
@@ -144,4 +162,3 @@ git branch -D merge-attempt >$DEBUG_STREAM || true
 if [ ! "X$UNSAFE" = Xtrue ]; then
   git cms-checkdeps -a
 fi
-
