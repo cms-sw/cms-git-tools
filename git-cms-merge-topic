@@ -120,8 +120,8 @@ fi
 cd $CMSSW_BASE/src
 git fetch . +HEAD:merge-attempt || { echo "You are on a failed merge branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
 
-if [ "$(git status --porcelain --untracked=no)" ]; then
-  $ECHO "${RED}Warning: there are non-committed changes on your working tree${NORMAL}, please commit or stash them."
+if [ "$(git status --porcelain --untracked=no | grep '^[ACDMRU]')" ]; then
+  $ECHO "${RED}Error:${NORMAL} there are staged but not committed changes on your working tree, please commit or stash them."
   exit 1
 fi
 
