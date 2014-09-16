@@ -62,7 +62,7 @@ while [ "$#" != 0 ]; do
       shift; set +x; VERBOSE=0; VERBOSE_STREAM=/dev/null ;;
     -y | --yes )
       INITOPTIONS="$INITOPTIONS $1"
-      shift; ASSUME_YES=1 ;;
+      shift;;
     --https )
       INITOPTIONS="$INITOPTIONS $1"
       shift;;
@@ -116,20 +116,12 @@ fi
 
 cd $CMSSW_BASE/src
 
-GITHUB_USERNAME="`git config --global --get user.github || true`"
-USER_FULLNAME="`git config --global --get user.name || true`"
-USER_EMAIL="`git config --global --get user.email || true`"
-
 case `git --version` in
   git\ version\ 1.7*)
-    OFFICIAL_CMSSW_REPO=git@github.com:cms-sw/cmssw.git
-    USER_CMSSW_REPO=git@github.com:$GITHUB_USERNAME/cmssw.git
     # git 1.7.x does not support a leading slash in .gitignore and .git/info/sparse-checkout
     LEADING_SLASH=
   ;;
   *)
-    OFFICIAL_CMSSW_REPO=`git config --get remote.official-cmssw.url || true`
-    USER_CMSSW_REPO=`git config --get remote.my-cmssw.url || true`
     LEADING_SLASH=/
   ;;
 esac
@@ -144,8 +136,8 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
 fi
 
-if [ "$(git status --porcelain --untracked=no)" ]; then
-  $ECHO "${RED}Warning: there are non-committed changes on your working tree${NORMAL}, please commit or stash them."
+if [ "$(git status --porcelain --untracked=no | grep '^[ACDMRU]')" ]; then
+  $ECHO "${RED}Error:${NORMAL} there are staged but not committed changes on your working tree, please commit or stash them."
   exit 1
 fi
 
