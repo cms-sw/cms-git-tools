@@ -350,7 +350,7 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
       git remote add my-cmssw $USER_CMSSW_REPO
       [ "$USER_CMSSW_REPO_PUSH" ] && git remote set-url --push my-cmssw $USER_CMSSW_REPO_PUSH
     fi
-    git fetch my-cmssw --tags       2> $VERBOSE_STREAM
+    git fetch my-cmssw        2> $VERBOSE_STREAM
   fi
 
   # setup sparse checkout
