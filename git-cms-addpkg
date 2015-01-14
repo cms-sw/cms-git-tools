@@ -169,11 +169,12 @@ if [ "$INPUT_FILE" ]; then
       [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
       echo $PKG_NAME
     fi
-    [ "$HEADER" ] && exit 1
   done
+  [ "$HEADER" ] && exit 1
 else
   if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
     echo "package $PKG_NAME does not exist in branch $CURRENT_BRANCH"
     exit 1
   fi
 fi
+exit 0
