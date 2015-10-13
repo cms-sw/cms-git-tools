@@ -5,7 +5,7 @@ case `uname` in
   *) ECHO="echo -e" ;;
 esac
 usage () {
-  echo "git cms-addpkg [options] SubSystem/Package"
+  echo "git cms-addpkg [options] Subsystem/Package [Subsystem/Package ...] "
   echo "git cms-addpkg [options] -f FILE"
   echo
   echo "Options:"
@@ -34,7 +34,7 @@ verbose () {
   fi
 }
 
-PKG_NAME=
+PACKAGES=
 INPUT_FILE=
 while [ "$#" != 0 ]; do
   case "$1" in
@@ -73,14 +73,9 @@ while [ "$#" != 0 ]; do
       echo Unknown option $1 ; usage 1 ;;
     *)
       if [ "$INPUT_FILE" == "" ]; then
-        # check out a single package
-        if [ "X$PKG_NAME" = X ]; then
-          PKG_NAME=$1
-          shift
-        else
-          echo "git cms-addpkg: you can specify only one package at the time."
-          exit 1
-        fi
+        # check out a list of packages
+        PACKAGES="$PACKAGES $1"
+        shift
       else
         # check out a list of packages via -f / --file FILE
         echo "git cms-addpkg: you cannot specify a package and input from file at the same time."
@@ -90,7 +85,7 @@ while [ "$#" != 0 ]; do
   esac
 done
 
-if [ "$PKG_NAME" == "" ] && [ "$INPUT_FILE" == "" ] ; then
+if [ "$PACKAGES" == "" ] && [ "$INPUT_FILE" == "" ] ; then
   echo "You need to specify at least one package or input file." ; exit 1
 fi
 
@@ -151,11 +146,16 @@ if [ "$INPUT_FILE" ]; then
   cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout
   rm -f .git/info/sparse-checkout-new
 else
-  verbose "Checking out package $PKG_NAME"
+  verbose "Checking out packages"
+  for PKG_NAME in $PACKAGES; do
+    verbose $PKG_NAME
+  done
 
   # add the requested package(s) to the sparse checkout
   cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
-  echo "$PKG_NAME" | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+  for PKG_NAME in $PACKAGES; do
+    echo $PKG_NAME | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+  done
   cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout
   rm -f .git/info/sparse-checkout-new
 fi
@@ -172,9 +172,12 @@ if [ "$INPUT_FILE" ]; then
   done
   [ "$HEADER" ] && exit 1
 else
-  if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
-    echo "package $PKG_NAME does not exist in branch $CURRENT_BRANCH"
-    exit 1
-  fi
+  for PKG_NAME in $PACKAGES; do
+    if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
+      [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
+      echo $PKG_NAME
+    fi
+  done
+  [ "$HEADER" ] && exit 1
 fi
 exit 0
