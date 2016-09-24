@@ -93,7 +93,7 @@ for x in `git diff $REGEX_OPT $REGEX $REF1..$REF2 --name-only | grep -v ".gitcon
   echo "$x" | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $INFO_DIR/sparse-checkout-new
 done
 for x in `git diff $REF1..$REF2 | grep '^old mode' -C 1 | grep '^diff --git' | sed -e 's|.* ||;s|b/||' | grep -v ".gitconfig" | cut -f1,2 -d/ | sort -u`; do
-  echo "$x" | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $INFO_DIR/sparse-checkout-new
+  echo "$x" | sed -e "/\//s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $INFO_DIR/sparse-checkout-new
 done
 
 cat $INFO_DIR/sparse-checkout-new | sort -u > $INFO_DIR/sparse-checkout
