@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#! /bin/bash -e
 # Initialises a local git repository for use with the official cmssw github remote and the user's github remote repositories
 
 case `uname` in
@@ -27,9 +27,8 @@ usage () {
 CHECK=
 CUSTOM_REMOTE=
 PROTOCOL=mixed
+DEBUG=0
 VERBOSE=1
-VERBOSE_STREAM=/dev/stderr
-DEBUG_STREAM=/dev/null
 OAUTH_TOKEN=869cfb0477e0cae72fb233be5e1f02bd97905bad
 PROXY=`git config https.proxy` && PROXY="-x $PROXY"
 
@@ -38,7 +37,7 @@ RED='\033[31m'
 NORMAL='\033[0m'
 
 verbose () {
-  if [ "X$VERBOSE" = X1 ]; then
+  if [ "$VERBOSE" = 1 ]; then
     $ECHO "$@"
   fi
 }
@@ -51,9 +50,9 @@ while [ "$#" != 0 ]; do
     --check )
       shift; CHECK=true ;;
     -d | --debug )
-      shift; set -x; DEBUG_STREAM=/dev/stderr ;;
+      shift; set -x; DEBUG=1 ;;
     -q | --quiet | -z )
-      shift; set +x; VERBOSE=0; VERBOSE_STREAM=/dev/null ;;
+      shift; set +x; DEBUG=0; VERBOSE=0 ;;
     -y | --yes )
       shift; ASSUME_YES=1 ;;
     --https )
@@ -61,18 +60,33 @@ while [ "$#" != 0 ]; do
     --ssh )
       shift; PROTOCOL=ssh ;;
     -*)
-      $ECHO Unknown option $1 ; usage 1 ;;
+      $ECHO "git cms-init: unknown option $1"; $ECHO; usage 1 ;;
     *)
       if [ "X$CMSSW_TAG" = X ]; then
         CMSSW_TAG=$1
       else
-        $ECHO Unexpected argument $1
+        $ECHO "git cms-init: unexpected argument $1"
+        $ECHO
         usage 1
       fi
       shift 1
     ;;
   esac
 done
+if [ $VERBOSE == 0 ]; then
+  # send vrbose messages to /dev/null
+  exec {verbose}> /dev/null
+else
+  # send debug messages to stderr
+  exec {verbose}>&2
+fi
+if [ $DEBUG == 0 ]; then
+  # send debug messages to /dev/null
+  exec {debug}> /dev/null
+else
+  # send debug messages to stderr
+  exec {debug}>&2
+fi
 
 # check the user details in the git configuration
 USER_FULLNAME="`git config --global --get user.name || true`"
@@ -107,10 +121,10 @@ fi
 
 if [ "X$CMSSW_BASE" = X ]; then
   if [ "X$CMSSW_TAG" = X ]; then
-    verbose CMSSW environment not setup. Do cmsenv in some workarea or specify tag to checkout.
+    verbose "CMSSW environment not setup. Do cmsenv in some workarea or specify tag to checkout."
     exit 1
   else
-    verbose Warning CMSSW environment not found. Checking out packages in $PWD/src.
+    verbose "Warning CMSSW environment not found. Checking out packages in $PWD/src."
     CMSSW_BASE=$PWD
   fi
 fi
@@ -122,13 +136,13 @@ fi
 
 if [ "X$CMSSW_TAG" = X ]; then
   if [ "$CURRENT_BRANCH" ]; then
-    verbose No release tags specified, using current branch $CURRENT_BRANCH.
+    verbose "No release tags specified, using current branch $CURRENT_BRANCH."
     CMSSW_TAG=$CURRENT_TAG
   elif [ "$CMSSW_GIT_HASH" ]; then
-    verbose No release tags specified, using default $CMSSW_GIT_HASH.
+    verbose "No release tags specified, using default $CMSSW_GIT_HASH."
     CMSSW_TAG=$CMSSW_GIT_HASH
   else
-    verbose No release tags specified, using default $CMSSW_VERSION.
+    verbose "No release tags specified, using default $CMSSW_VERSION."
     CMSSW_TAG=$CMSSW_VERSION
   fi
 fi
@@ -181,12 +195,12 @@ esac
 if [ "$PROTOCOL" != "ssh" ] && ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/meta" > /dev/null; then
   if [ "$PROTOCOL" = "https" ]; then
     # unable to contact GitHub over https, aborting
-    $ECHO "Attention: git is unable to access GitHub over https, aborting."                                     > $VERBOSE_STREAM
-    $ECHO "You may want to retry with the --ssh option."                                                        > $VERBOSE_STREAM
+    verbose "Attention: git is unable to access GitHub over https, aborting."
+    verbose "You may want to retry with the --ssh option."
     exit 1
   else
     # unable to contact GitHub over https, switching to ssh
-    $ECHO "Attention: git is unable to access GitHub over https, switching to ssh."                             > $VERBOSE_STREAM
+    verbose "Attention: git is unable to access GitHub over https, switching to ssh."
     PROTOCOL=ssh
     OFFICIAL_CMSSW_REPO="git@github.com:cms-sw/cmssw.git"
   fi
@@ -209,7 +223,7 @@ if git config remote.my-cmssw.url >& /dev/null; then
   CUSTOM_REMOTE=true
   USER_CMSSW_REPO=`git config remote.my-cmssw.url`
   USER_CMSSW_REPO_PUSH=`git config remote.my-cmssw.pushurl`
-  $ECHO "Attention: using the 'my-cmssw' remote from your git configuration: $RED$USER_CMSSW_REPO$NORMAL"     > $VERBOSE_STREAM
+  verbose "Attention: using the 'my-cmssw' remote from your git configuration: $RED$USER_CMSSW_REPO$NORMAL"
 fi
 
 # check if a shared reference repository is available, otherwise set up a personal one
@@ -230,13 +244,14 @@ if [ ! -e $CMSSW_GIT_REFERENCE ]; then
   while [ X$QUESTION_DONE = X ]; do
     if [ X$ASSUME_YES = X ]; then
       read -n 1 -p "Your reference git repository does not seem to exist, would you like to create it? [ y / N / ? ] "
+      echo
       QUESTION_DONE=1
     else
       REPLY=y
       QUESTION_DONE=1
     fi
     case $REPLY in
-      y|Y|yes|YES)
+      y|Y)
         git clone --bare $OFFICIAL_CMSSW_REPO $CMSSW_GIT_REFERENCE
         touch $CMSSW_GIT_REFERENCE/create-`whoami`
       ;;
@@ -264,61 +279,61 @@ fi
 
 # if using a personal reference repository, update it from the official one
 if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
-  (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
+  (cd $CMSSW_GIT_REFERENCE ; git remote update origin >&${verbose} 2>&1)
 fi
 
 # check if the user repository is accessible
 if [ "$CUSTOM_REMOTE" ] || [ "$PROTOCOL" = "ssh" ]; then
 
-  if [ "$CHECK" ] && ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
-    $ECHO "Attention: git is unable to access your 'my-cmssw' remote repository ($RED$USER_CMSSW_REPO$NORMAL). " > $VERBOSE_STREAM
-    $ECHO "You can work locally, but you will not be able to push your changes to it."                        > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  if [ "$CHECK" ] && ! git ls-remote $USER_CMSSW_REPO >&${debug} 2>&1; then
+    verbose "Attention: git is unable to access your 'my-cmssw' remote repository ($RED$USER_CMSSW_REPO$NORMAL). "
+    verbose "You can work locally, but you will not be able to push your changes to it."
+    verbose ""
     USER_CMSSW_REPO=""
   fi
 
 else
 
   # check the user setup on GitHub
-  if curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME" | tee $DEBUG_STREAM | grep -q -i 'Not Found' ; then
-    $ECHO "You don't seem to have a GitHub accout, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
-    $ECHO "($RED$GITHUB_USERNAME$NORMAL) is not correct."                                                     > $VERBOSE_STREAM
-    $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
-    $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO "You can correct your GitHub user name via:"                                                        > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO "    git config --global user.github <your github username>"                                        > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO "To create a personal repository:"                                                                  > $VERBOSE_STREAM
-    $ECHO "    visit to https://github.com/ and register a new account"                                       > $VERBOSE_STREAM
-    $ECHO "    visit to https://github.com/cms-sw/cmssw and click on the Fork button"                         > $VERBOSE_STREAM
-    $ECHO "    select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  if curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME" | tee >(cat >&${debug}) | grep -q -i 'Not Found' ; then
+    verbose "You don't seem to have a GitHub accout, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct."
+    verbose "($RED$GITHUB_USERNAME$NORMAL) is not correct."
+    verbose "You can work locally, but you will not be able to push your changes to GitHub for inclusion "
+    verbose "in the official CMSSW distribution."
+    verbose ""
+    verbose "You can correct your GitHub user name via:"
+    verbose ""
+    verbose "    git config --global user.github <your github username>"
+    verbose ""
+    verbose ""
+    verbose "To create a personal repository:"
+    verbose "    visit to https://github.com/ and register a new account"
+    verbose "    visit to https://github.com/cms-sw/cmssw and click on the Fork button"
+    verbose "    select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"
+    verbose ""
     USER_CMSSW_REPO=""
-  elif ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee $DEBUG_STREAM | grep -q '"name": *"cmssw"'; then
-    $ECHO "You don't seem to have a personal repository, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct." > $VERBOSE_STREAM
-    $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
-    $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO "You can correct your GitHub user name via:"                                                        > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO "    git config --global user.github <your github username>"                                        > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
-    $ECHO "To create a personal repository:"                                                                  > $VERBOSE_STREAM
-    $ECHO "  - go to https://github.com/ and log in"                                                          > $VERBOSE_STREAM
-    $ECHO "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"                            > $VERBOSE_STREAM
-    $ECHO "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"    > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  elif ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee >(cat >&${debug}) | grep -q '"name": *"cmssw"'; then
+    verbose "You don't seem to have a personal repository, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct."
+    verbose "You can work locally, but you will not be able to push your changes to GitHub for inclusion "
+    verbose "in the official CMSSW distribution."
+    verbose ""
+    verbose "You can correct your GitHub user name via:"
+    verbose ""
+    verbose "    git config --global user.github <your github username>"
+    verbose ""
+    verbose ""
+    verbose "To create a personal repository:"
+    verbose "  - go to https://github.com/ and log in"
+    verbose "  - go to https://github.com/cms-sw/cmssw and click on the Fork button"
+    verbose "  - select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"
+    verbose ""
     USER_CMSSW_REPO=""
-  elif [ "$CHECK" ] && ! git ls-remote $USER_CMSSW_REPO >& $DEBUG_STREAM; then
-    $ECHO "Attention: your GitHub account ($RED$GITHUB_USERNAME$NORMAL) and personal repository ($RED$USER_CMSSW_REPO$NORMAL) " > $VERBOSE_STREAM
-    $ECHO "are properly configured, but git is unable to access it."                                          > $VERBOSE_STREAM
-    $ECHO "You can work locally, but you will not be able to push your changes to GitHub for inclusion "      > $VERBOSE_STREAM
-    $ECHO "in the official CMSSW distribution."                                                               > $VERBOSE_STREAM
-    $ECHO ""                                                                                                  > $VERBOSE_STREAM
+  elif [ "$CHECK" ] && ! git ls-remote $USER_CMSSW_REPO >&${debug} 2>&1; then
+    verbose "Attention: your GitHub account ($RED$GITHUB_USERNAME$NORMAL) and personal repository ($RED$USER_CMSSW_REPO$NORMAL) "
+    verbose "are properly configured, but git is unable to access it."
+    verbose "You can work locally, but you will not be able to push your changes to GitHub for inclusion "
+    verbose "in the official CMSSW distribution."
+    verbose ""
     USER_CMSSW_REPO=""
   fi
 
@@ -333,11 +348,11 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   # do not checkout any files
   # import all remote tags
   if [ "$CMSSW_GIT_REFERENCE" ]; then
-    git clone --branch $CMSSW_BRANCH --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
+    git clone --branch $CMSSW_BRANCH --no-checkout --reference $CMSSW_GIT_REFERENCE --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >&${verbose} 2>&1
   else
-    git clone --branch $CMSSW_BRANCH --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >& $VERBOSE_STREAM
+    git clone --branch $CMSSW_BRANCH --no-checkout                                  --origin official-cmssw $OFFICIAL_CMSSW_REPO $CMSSW_BASE/src >&${verbose} 2>&1
   fi
-  git fetch official-cmssw --tags   2> $VERBOSE_STREAM
+  git fetch official-cmssw --tags 2>&${verbose}
 
   # create a new branch, pointing to the commit corresponding to $CMSSW_TAG, and switch to it
   git branch from-$CMSSW_TAG $CMSSW_TAG
@@ -350,7 +365,7 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
       git remote add my-cmssw $USER_CMSSW_REPO
       [ "$USER_CMSSW_REPO_PUSH" ] && git remote set-url --push my-cmssw $USER_CMSSW_REPO_PUSH
     fi
-    git fetch my-cmssw        2> $VERBOSE_STREAM
+    git fetch my-cmssw 2>&${verbose}
   fi
 
   # setup sparse checkout
@@ -369,4 +384,4 @@ if [ "X$GIT_CREDENTIAL_CACHE" = X ]; then
   esac
 fi
 
-verbose You are on branch `git symbolic-ref --short HEAD`
+verbose "You are on branch `git symbolic-ref --short HEAD`"
