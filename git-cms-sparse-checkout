@@ -49,16 +49,35 @@ while [ "$#" != 0 ]; do
     ;;
   esac
 done
-if [ $DEBUG == 0 ]; then
-  # send debug messages to /dev/null
-  exec {debug}> /dev/null
+
+BASH_FULL_VERSION=$((${BASH_VERSINFO[0]} * 10000 + ${BASH_VERSINFO[1]} * 100 + ${BASH_VERSINFO[2]}))
+if (( BASH_FULL_VERSION >= 40100 )); then
+  # bash 4.1 or newer
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec {debug}> /dev/null
+  else
+    # send debug messages to stderr
+    exec {debug}>&2
+    # pass the debug option to subcommands
+    DEBUG_OPT=-d
+    # enable shell tracing
+    set -x
+  fi
 else
-  # send debug messages to stderr
-  exec {debug}>&2
-  # pass the debug option to subcommands
-  DEBUG_OPT=-d
-  # enable shell tracing
-  set -x
+  # bash 4.0 or older
+  debug=12
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec 12> /dev/null
+  else
+    # send debug messages to stderr
+    exec 12>&2
+    # pass the debug option to subcommands
+    DEBUG_OPT=-d
+    # enable shell tracing
+    set -x
+  fi
 fi
 
 case `git --version` in 

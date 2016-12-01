@@ -95,19 +95,41 @@ if [ "$PACKAGES" == "" ] && [ "$INPUT_FILE" == "" ] ; then
   usage 1
 fi
 
-if [ $VERBOSE == 0 ]; then
-  # send vrbose messages to /dev/null
-  exec {verbose}> /dev/null
+BASH_FULL_VERSION=$((${BASH_VERSINFO[0]} * 10000 + ${BASH_VERSINFO[1]} * 100 + ${BASH_VERSINFO[2]}))
+if (( BASH_FULL_VERSION >= 40100 )); then
+  # bash 4.1 or newer
+  if [ $VERBOSE == 0 ]; then
+    # send verbose messages to /dev/null
+    exec {verbose}> /dev/null
+  else
+    # send debug messages to stderr
+    exec {verbose}>&2
+  fi
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec {debug}> /dev/null
+  else
+    # send debug messages to stderr
+    exec {debug}>&2
+  fi
 else
-  # send debug messages to stderr
-  exec {verbose}>&2
-fi
-if [ $DEBUG == 0 ]; then
-  # send debug messages to /dev/null
-  exec {debug}> /dev/null
-else
-  # send debug messages to stderr
-  exec {debug}>&2
+  # bash 4.0 or older
+  verbose=11
+  if [ $VERBOSE == 0 ]; then
+    # send verbose messages to /dev/null
+    exec 11> /dev/null
+  else
+    # send debug messages to stderr
+    exec 11>&2
+  fi
+  debug=12
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec 12> /dev/null
+  else
+    # send debug messages to stderr
+    exec 12>&2
+  fi
 fi
 
 if [ "$INPUT_FILE" ]; then
