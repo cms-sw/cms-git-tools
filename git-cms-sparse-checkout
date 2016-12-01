@@ -12,43 +12,18 @@ usage () {
   $ECHO "-h                 \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
-  $ECHO "-z, --quiet        \tdo not print out progress"
   exit $1
 }
 
-NORMAL_STREAM=/dev/stdout
-VERBOSE_STREAM=/dev/stdout
-DEBUG_STREAM=/dev/null
-
-verbose () {
-  if [ "X$VERBOSE" = X1 ]; then
-    echo "$@"
-  fi
-}
-
+DEBUG=0
 REF1=
 REF2=
 while [ "$#" != 0 ]; do
   case "$1" in
     -h | --help )
       usage 0;;
-    -v|--verbose)
-      NORMAL_STREAM=/dev/stdout
-      VERBOSE_STREAM=/dev/stdout
-      DEBUG_STREAM=/dev/null
-      shift
-      ;;
-    -q|--quiet)
-      NORMAL_STREAM=/dev/null
-      VERBOSE_STREAM=/dev/null
-      DEBUG_STREAM=/dev/null
-      shift
-      ;;
     -d|--debug)
-      NORMAL_STREAM=/dev/stdout
-      VERBOSE_STREAM=/dev/stdout
-      DEBUG_STREAM=/dev/stdout
-      set -x
+      DEBUG=1
       shift
       ;;
     --exclude-cvs-keywords)
@@ -63,10 +38,10 @@ while [ "$#" != 0 ]; do
     -*)
       echo Unknown option $1 ; usage 1 ;;
     *)
-      if [ "X$REF1" = X ]; then
-        REF1=$1
-      elif [ "X$CMSSW_TAG" = X ]; then
-        REF2=$1
+      if [ "$REF1" == "" ]; then
+        REF1="$1"
+      elif [ "$REF2" = "" ]; then
+        REF2="$1"
       else
         echo "Too many tags / branches specified." ; exit 1
       fi
@@ -74,6 +49,17 @@ while [ "$#" != 0 ]; do
     ;;
   esac
 done
+if [ $DEBUG == 0 ]; then
+  # send debug messages to /dev/null
+  exec {debug}> /dev/null
+else
+  # send debug messages to stderr
+  exec {debug}>&2
+  # pass the debug option to subcommands
+  DEBUG_OPT=-d
+  # enable shell tracing
+  set -x
+fi
 
 case `git --version` in 
   git\ version\ 1.7*)
