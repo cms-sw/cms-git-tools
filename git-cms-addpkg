@@ -1,14 +1,18 @@
-#!/bin/bash -e
+#! /bin/bash -e
 # Mimics addpkg behavior in git.
+
 case `uname` in
-  Darwin) ECHO=echo ;;
-  *) ECHO="echo -e" ;;
+  Darwin)
+    ECHO="echo" ;;
+  *)
+    ECHO="echo -e" ;;
 esac
+
 usage () {
-  echo "git cms-addpkg [options] Subsystem/Package [Subsystem/Package ...] "
-  echo "git cms-addpkg [options] -f FILE"
-  echo
-  echo "Options:"
+  $ECHO "git cms-addpkg [options] Subsystem/Package [Subsystem/Package ...] "
+  $ECHO "git cms-addpkg [options] -f FILE"
+  $ECHO
+  $ECHO "Options:"
   $ECHO "-h                 \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
@@ -20,11 +24,13 @@ usage () {
   exit $1
 }
 
+DEBUG=0
 VERBOSE=1
 INITOPTIONS=""                      # options passed to git cms-init
-VERBOSE_STREAM=/dev/stderr
-DEBUG_STREAM=/dev/null
+PACKAGES=
+INPUT_FILE=
 
+# colors and formatting
 RED='\033[31m'
 NORMAL='\033[0m'
 
@@ -34,15 +40,13 @@ verbose () {
   fi
 }
 
-PACKAGES=
-INPUT_FILE=
 while [ "$#" != 0 ]; do
   case "$1" in
     -h | --help )
       usage 0;;
     -d | --debug )
       INITOPTIONS="$INITOPTIONS $1"
-      shift; set -x; DEBUG_STREAM=/dev/stderr ;;
+      shift; set -x; DEBUG=1 ;;
     -f | --file )
       OPTION=$1; shift
       INPUT_FILE="$1"; shift
@@ -59,7 +63,7 @@ while [ "$#" != 0 ]; do
       ;;
     -q | --quiet | -z )
       INITOPTIONS="$INITOPTIONS $1"
-      shift; set +x; VERBOSE=0; VERBOSE_STREAM=/dev/null ;;
+      shift; set +x; DEBUG=0; VERBOSE=0 ;;
     -y | --yes )
       INITOPTIONS="$INITOPTIONS $1"
       shift;;
@@ -70,7 +74,7 @@ while [ "$#" != 0 ]; do
       INITOPTIONS="$INITOPTIONS $1"
       shift;;
     -*)
-      echo Unknown option $1 ; usage 1 ;;
+      $ECHO "git cms-addpkg: unknown option $1"; $ECHO; usage 1;;
     *)
       if [ "$INPUT_FILE" == "" ]; then
         # check out a list of packages
@@ -78,15 +82,54 @@ while [ "$#" != 0 ]; do
         shift
       else
         # check out a list of packages via -f / --file FILE
-        echo "git cms-addpkg: you cannot specify a package and input from file at the same time."
-        exit 1
+        $ECHO "git cms-addpkg: you cannot specify a package and input from file at the same time."
+        $ECHO
+        usage 1
       fi
     ;;
   esac
 done
-
 if [ "$PACKAGES" == "" ] && [ "$INPUT_FILE" == "" ] ; then
-  echo "You need to specify at least one package or input file." ; exit 1
+  $ECHO "git cms-addpkg: you need to specify at least one package or input file."
+  $ECHO
+  usage 1
+fi
+
+BASH_FULL_VERSION=$((${BASH_VERSINFO[0]} * 10000 + ${BASH_VERSINFO[1]} * 100 + ${BASH_VERSINFO[2]}))
+if (( BASH_FULL_VERSION >= 40100 )); then
+  # bash 4.1 or newer
+  if [ $VERBOSE == 0 ]; then
+    # send verbose messages to /dev/null
+    exec {verbose}> /dev/null
+  else
+    # send debug messages to stderr
+    exec {verbose}>&2
+  fi
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec {debug}> /dev/null
+  else
+    # send debug messages to stderr
+    exec {debug}>&2
+  fi
+else
+  # bash 4.0 or older
+  verbose=11
+  if [ $VERBOSE == 0 ]; then
+    # send verbose messages to /dev/null
+    exec 11> /dev/null
+  else
+    # send debug messages to stderr
+    exec 11>&2
+  fi
+  debug=12
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec 12> /dev/null
+  else
+    # send debug messages to stderr
+    exec 12>&2
+  fi
 fi
 
 if [ "$INPUT_FILE" ]; then
@@ -102,7 +145,7 @@ fi
 
 # initialize the local repository
 if [ -z "$CMSSW_BASE" ]; then
-  echo "CMSSW environment not setup, please run 'cmsenv' before 'git cms-addpkg'."
+  $ECHO "CMSSW environment not setup, please run 'cmsenv' before 'git cms-addpkg'."
   exit 1
 fi
 if ! [ -d $CMSSW_BASE/src/.git ]; then
@@ -128,7 +171,7 @@ fi
 
 # if using a personal reference repository, update it from the official one
 if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
-  (cd $CMSSW_GIT_REFERENCE ;  git remote update origin 2>$VERBOSE_STREAM >$VERBOSE_STREAM)
+  (cd $CMSSW_GIT_REFERENCE ; git remote update origin >&${verbose} 2>&1)
 fi
 
 if [ "$(git status --porcelain --untracked=no | grep '^[ACDMRU]')" ]; then

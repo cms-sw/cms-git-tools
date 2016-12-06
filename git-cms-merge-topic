@@ -14,12 +14,10 @@ usage() {
   $ECHO "-d, --debug        \tenable debug output"
   $ECHO "    --https        \taccess GitHub over https (default)"
   $ECHO "    --ssh          \taccess GitHub over ssh"
-  $ECHO "-q, --quiet        \tbe completely quiet"
-  $ECHO "--no-commit        \tdo not do the final commit when merging"
+  $ECHO "    --no-commit    \tdo not do the final commit when merging"
   $ECHO "-s, --strategy     \tspecify strategy when merging"
   $ECHO "-X, --strategy-option     \tspecify strategy when merging"
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
-  $ECHO "-v, --verbose      \tshow verbose output"
   exit 1
 }
 
@@ -27,9 +25,7 @@ usage() {
 RED='\033[31m'
 NORMAL='\033[0m'
 
-NORMAL_STREAM=/dev/stdout
-VERBOSE_STREAM=/dev/stdout
-DEBUG_STREAM=/dev/null
+DEBUG=0
 PROTOCOL=https
 
 while [ $# -gt 0 ]; do
@@ -38,24 +34,8 @@ while [ $# -gt 0 ]; do
       UNSAFE=true
       shift
       ;;
-    -v|--verbose)
-      NORMAL_STREAM=/dev/stdout
-      VERBOSE_STREAM=/dev/stdout
-      DEBUG_STREAM=/dev/null
-      shift
-      ;;
-    -q|--quiet)
-      NORMAL_STREAM=/dev/null
-      VERBOSE_STREAM=/dev/null
-      DEBUG_STREAM=/dev/null
-      shift
-      ;;
     -d|--debug)
-      NORMAL_STREAM=/dev/stdout
-      VERBOSE_STREAM=/dev/stdout
-      DEBUG_STREAM=/dev/stdout
-      DEBUG_OPT=-d
-      set -x
+      DEBUG=1
       shift
       ;;
     --https )
@@ -102,8 +82,38 @@ while [ $# -gt 0 ]; do
     ;;
   esac
 done
-if [ X$BRANCH = X ]; then
+if [ "$BRANCH" == "" ]; then
   usage
+fi
+
+BASH_FULL_VERSION=$((${BASH_VERSINFO[0]} * 10000 + ${BASH_VERSINFO[1]} * 100 + ${BASH_VERSINFO[2]}))
+if (( BASH_FULL_VERSION >= 40100 )); then
+  # bash 4.1 or newer
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec {debug}> /dev/null
+  else
+    # send debug messages to stderr
+    exec {debug}>&2
+    # pass the debug option to subcommands
+    DEBUG_OPT=-d
+    # enable shell tracing
+    set -x
+  fi
+else
+  # bash 4.0 or older
+  debug=12
+  if [ $DEBUG == 0 ]; then
+    # send debug messages to /dev/null
+    exec 12> /dev/null
+  else
+    # send debug messages to stderr
+    exec 12>&2
+    # pass the debug option to subcommands
+    DEBUG_OPT=-d
+    # enable shell tracing
+    set -x
+  fi
 fi
 
 PULL_ID=$1
@@ -143,7 +153,7 @@ git fetch -n $REPOSITORY +$COMMIT:$GITHUB_USER/$BRANCH
 # Save the name of the current branch.
 CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 # Attempt a merge in a separate branch
-git checkout merge-attempt >$DEBUG_STREAM 
+git checkout merge-attempt >&${debug}
 MERGE_BASE=`git merge-base $GITHUB_USER/$BRANCH $CURRENT_BRANCH`
 git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
 git read-tree -mu HEAD
@@ -155,9 +165,9 @@ git checkout $CURRENT_BRANCH
 # Add the missing files.
 git read-tree -mu HEAD
 # This should always be a FF commit.
-git merge --ff merge-attempt >$DEBUG_STREAM 
+git merge --ff merge-attempt >&${debug}
 # Delete the branch used for merge
-git branch -D merge-attempt >$DEBUG_STREAM || true
+git branch -D merge-attempt >&${debug} || true
 # Do checkdeps unless not specified.
 if [ ! "X$UNSAFE" = Xtrue ]; then
   git cms-checkdeps -a
