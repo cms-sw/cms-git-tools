@@ -32,16 +32,17 @@ DEBUG=0
 PROTOCOL=https
 
 COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
+PARENT_NAME=$(echo "$(ps -o comm= $PPID)")
+# ps command names get truncated
+if [ "$PARENT_NAME" = "git-cms-checkou" ]; then
+  COMMAND_NAME=cms-checkout-topic
+  NOMERGE=true
+fi
 
 while [ $# -gt 0 ]; do
   case $1 in 
     -u|--unsafe)
       UNSAFE=true
-      shift
-      ;;
-    -n|--no-merge)
-      NOMERGE=true
-      COMMAND_NAME=cms-checkout-topic
       shift
       ;;
     -d|--debug)
