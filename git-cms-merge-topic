@@ -31,7 +31,7 @@ NORMAL='\033[0m'
 DEBUG=0
 PROTOCOL=https
 
-COMMAND_NAME=cms-merge-topic
+COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
 
 while [ $# -gt 0 ]; do
   case $1 in 
@@ -89,7 +89,7 @@ while [ $# -gt 0 ]; do
           GITHUB_USER=`echo $1 | cut -f1 -d:` ;;
         [0-9]*) 
           BRANCH=refs/pull/$1/head 
-          LOCAL_BRANCH=PR$1 ;; 
+          LOCAL_BRANCH=pull/$1 ;; 
       esac ;
       shift
     ;;
@@ -131,10 +131,11 @@ fi
 
 PULL_ID=$1
 
-TEMP_BRANCH=merge-attempt
+TEMP_BRANCH_WORD=merge
 if [ "X$NOMERGE" = Xtrue ]; then
-  TEMP_BRANCH=checkout-attempt
+  TEMP_BRANCH_WORD=checkout
 fi
+TEMP_BRANCH=${TEMP_BRANCH_WORD}-attempt
 
 # initialize the local repository
 if [ -z "$CMSSW_BASE" ]; then
@@ -146,7 +147,7 @@ if ! [ -d $CMSSW_BASE/src/.git ]; then
 fi
 
 cd $CMSSW_BASE/src
-git fetch . +HEAD:$TEMP_BRANCH || { echo "You are on a failed merge branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
+git fetch . +HEAD:$TEMP_BRANCH || { echo "You are on a failed $TEMP_BRANCH_WORD branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
 
 if [ "$(git status --porcelain --untracked=no | grep '^[ACDMRU]')" ]; then
   $ECHO "${RED}Error:${NORMAL} there are staged but not committed changes on your working tree, please commit or stash them."
@@ -176,7 +177,7 @@ MERGE_BASE=`git merge-base $GITHUB_USER/$BRANCH $CURRENT_BRANCH`
 git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
 git read-tree -mu HEAD
 # in no-merge case, just checkout a new branch
-if [ "X$NOMERGE" = Xtrue ]; then
+if [ "$NOMERGE" = "true" ]; then
   git checkout -b $LOCAL_BRANCH $GITHUB_USER/$BRANCH
   echo "Created branch $LOCAL_BRANCH to follow $BRANCH from repository $GITHUB_USER"
 # otherwise, perform merge
