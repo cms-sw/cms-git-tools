@@ -6,19 +6,21 @@ case `uname` in
 esac
 
 usage() {
-  $ECHO "git cms-merge-topic [options] <github-user>:<branch>"
-  $ECHO "git cms-merge-topic [options] <official-cmssw-branch>"
-  $ECHO "git cms-merge-topic [options] <pull-request-id>"
+  COMMAND_NAME=$1
+  $ECHO "git $COMMAND_NAME [options] <github-user>:<branch>"
+  $ECHO "git $COMMAND_NAME [options] <official-cmssw-branch>"
+  $ECHO "git $COMMAND_NAME [options] <pull-request-id>"
   $ECHO
   $ECHO "Options:"
   $ECHO "-d, --debug        \tenable debug output"
   $ECHO "    --https        \taccess GitHub over https (default)"
   $ECHO "    --ssh          \taccess GitHub over ssh"
-  $ECHO "    --no-commit    \tdo not do the final commit when merging"
-  $ECHO "-s, --strategy     \tspecify strategy when merging"
-  $ECHO "-X, --strategy-option     \tspecify strategy when merging"
+  if [ "$COMMAND_NAME" = "cms-merge-topic" ]; then
+    $ECHO "    --no-commit    \tdo not do the final commit when merging"
+    $ECHO "-s, --strategy     \tspecify strategy when merging"
+    $ECHO "-X, --strategy-option     \tspecify strategy when merging"
+  fi
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
-  $ECHO "-n, --no-merge       \tdo not perform a merge, just checkout code from specified branch"
   exit 1
 }
 
@@ -29,6 +31,8 @@ NORMAL='\033[0m'
 DEBUG=0
 PROTOCOL=https
 
+COMMAND_NAME=cms-merge-topic
+
 while [ $# -gt 0 ]; do
   case $1 in 
     -u|--unsafe)
@@ -37,6 +41,7 @@ while [ $# -gt 0 ]; do
       ;;
     -n|--no-merge)
       NOMERGE=true
+      COMMAND_NAME=cms-checkout-topic
       shift
       ;;
     -d|--debug)
@@ -91,7 +96,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 if [ "$BRANCH" == "" ]; then
-  usage
+  usage $COMMAND_NAME
 fi
 
 BASH_FULL_VERSION=$((${BASH_VERSINFO[0]} * 10000 + ${BASH_VERSINFO[1]} * 100 + ${BASH_VERSINFO[2]}))
