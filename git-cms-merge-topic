@@ -32,10 +32,7 @@ DEBUG=0
 PROTOCOL=https
 
 COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
-PARENT_NAME=$(echo "$(ps -o comm= $PPID)")
-# ps command names get truncated
-if [ "$PARENT_NAME" = "git-cms-checkou" ]; then
-  COMMAND_NAME=cms-checkout-topic
+if [ "$COMMAND_NAME" = "cms-checkout-topic" ]; then
   NOMERGE=true
 fi
 

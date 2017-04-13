@@ -1,5 +1,1 @@
-#!/bin/bash -e
-
-# cms-merge-topic checks if it was called by this wrapper
-git-cms-merge-topic "$@"
-
+git-cms-merge-topic
