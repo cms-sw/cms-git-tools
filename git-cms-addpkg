@@ -226,7 +226,6 @@ CURRENT_BRANCH=`git symbolic-ref --short HEAD`
 
 # check if requested packages are present to be removed
 if [ "$COMMAND_NAME" == "cms-rmpkg" ]; then
-  CHECK_RETURN=0
   if [ "$INPUT_FILE" ]; then
     checkPkgFile "$INPUT_FILE" "$CURRENT_BRANCH"
   else
@@ -235,18 +234,14 @@ if [ "$COMMAND_NAME" == "cms-rmpkg" ]; then
 fi
 
 # create temporary sparse checkout file
-if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
-  cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
-else
-  touch $CMSSW_BASE/src/.git/info/sparse-checkout-new
-fi
+touch $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
 
 # add the requested package(s) to the temporary file
 if [ "$INPUT_FILE" ]; then
   verbose "$ACTION packages"
   verbose "`cat "$INPUT_FILE"`"
 
-  cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+  cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
 else
   verbose "$ACTION packages"
   for PKG_NAME in $PACKAGES; do
@@ -254,20 +249,41 @@ else
   done
 
   for PKG_NAME in $PACKAGES; do
-    echo $PKG_NAME | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+    echo $PKG_NAME | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
   done
 fi
 
 # add or remove from the real sparse checkout file
-cat $CMSSW_BASE/src/.git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout-new-sorted
 if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
-  mv $CMSSW_BASE/src/.git/info/sparse-checkout-new-sorted $CMSSW_BASE/src/.git/info/sparse-checkout
-  rm -f $CMSSW_BASE/src/.git/info/sparse-checkout-new
+  cat $CMSSW_BASE/src/.git/info/sparse-checkout-tmp | while read LINE; do
+    # remove any exclusion line(s)
+    grep -v "^\!$LINE" $CMSSW_BASE/src/.git/info/sparse-checkout > $CMSSW_BASE/src/.git/info/sparse-checkout-new
+    mv $CMSSW_BASE/src/.git/info/sparse-checkout-new $CMSSW_BASE/src/.git/info/sparse-checkout
+    # if addition line not present, append it
+    if ! grep -q -x "$LINE" $CMSSW_BASE/src/.git/info/sparse-checkout; then
+      echo "$LINE" >> $CMSSW_BASE/src/.git/info/sparse-checkout
+    fi
+  done
 else
-  grep -v -x -f $CMSSW_BASE/src/.git/info/sparse-checkout-new-sorted $CMSSW_BASE/src/.git/info/sparse-checkout > $CMSSW_BASE/src/.git/info/sparse-checkout-new
-  mv $CMSSW_BASE/src/.git/info/sparse-checkout-new $CMSSW_BASE/src/.git/info/sparse-checkout
-  rm -f $CMSSW_BASE/src/.git/info/sparse-checkout-new-sorted
+  cat $CMSSW_BASE/src/.git/info/sparse-checkout-tmp | while read LINE; do
+    # remove any addition line(s)
+    grep -v "^$LINE" $CMSSW_BASE/src/.git/info/sparse-checkout > $CMSSW_BASE/src/.git/info/sparse-checkout-new
+    mv $CMSSW_BASE/src/.git/info/sparse-checkout-new $CMSSW_BASE/src/.git/info/sparse-checkout
+    # special case: append exclusion line for package (if whole subsystem previously added)
+    if echo $LINE | grep -q "${LEADING_SLASH}.*/.*/"; then
+      SUBSYSTEM=${LINE%/*/}/
+      if grep -q -x "$SUBSYSTEM" $CMSSW_BASE/src/.git/info/sparse-checkout; then
+        echo "!$LINE" >> $CMSSW_BASE/src/.git/info/sparse-checkout
+      fi
+    fi
+  done
 fi
+rm -f $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
+
+# sort, keep exclusion lines at end
+grep -v "^\!" $CMSSW_BASE/src/.git/info/sparse-checkout | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout-new
+grep "^\!" $CMSSW_BASE/src/.git/info/sparse-checkout | sort -u >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+mv $CMSSW_BASE/src/.git/info/sparse-checkout-new $CMSSW_BASE/src/.git/info/sparse-checkout
 
 # update the working area
 git read-tree -mu HEAD
