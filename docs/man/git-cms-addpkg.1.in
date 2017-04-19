@@ -2,35 +2,40 @@
 
 .SH NAME
 
-git-cms-addpkg - CMSSW helper to checkout single packages from the git repository.
+git-cms-addpkg - CMSSW helper to checkout single packages from the git repository in the working area.
 
 .SH SYNOPSIS
 
-.B git cms-addpkg [options] <package> [<tag>]
+.B git cms-addpkg [options] <subsystem/package> [<subsystem/package> ...] 
+
+.B git cms-addpkg [options] -f FILE
 
 .SH DESCRIPTION
 
-This is the git equivalent of the old CVS addpkg commant. <package> is the
-package you want to checkout (e.g. FWCore/Version), <tag> is the optional
-release tag which you want to checkout. By default it will use the tag used for
-the current release area.
+This is the git equivalent of the old CVS addpkg command. <package> is the
+package you want to checkout (e.g. FWCore/Version), or <subsystem> is the
+subsystem you want to checkout (e.g. FWCore).
+If the local repository has not been initialized, it will call git-cms-init.
 
 .SH OPTIONS
-
-The defaults should be just fine, however you can fine tune output of the
-command with the following options.
 
 .TP 5
 
 -d, --debug        
 
-enable debug output"
+enable debug output
 
 .TP 5
 
--f, --force
+-f, --file FILE
 
-force dangerous operations
+read the list of packages to be checked out from FILE
+
+.TP 5  
+
+-q, --quiet, -z
+
+do not print out progress
 
 .TP 5
 
@@ -38,11 +43,11 @@ force dangerous operations
 
 use https, rather than ssh to access your personal repository
 
-.TP 5  
+.TP 5
 
--q, --quiet
+--ssh
 
-do not print out progress
+use ssh, rather than https to access the official repository
 
 .TP 5
 
