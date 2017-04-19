@@ -7,6 +7,7 @@ esac
 
 usage() {
   COMMAND_NAME=$1
+  CODE=$2
   $ECHO "git $COMMAND_NAME [options] <github-user>:<branch>"
   $ECHO "git $COMMAND_NAME [options] <official-cmssw-branch>"
   $ECHO "git $COMMAND_NAME [options] <pull-request-id>"
@@ -18,10 +19,10 @@ usage() {
   if [ "$COMMAND_NAME" = "cms-merge-topic" ]; then
     $ECHO "    --no-commit    \tdo not do the final commit when merging"
     $ECHO "-s, --strategy     \tspecify strategy when merging"
-    $ECHO "-X, --strategy-option     \tspecify strategy when merging"
+    $ECHO "-X, --strategy-option     \tspecify strategy option when merging"
   fi
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
-  exit 1
+  exit $CODE
 }
 
 # colors and formatting
@@ -66,6 +67,8 @@ while [ $# -gt 0 ]; do
       STRATEGY_OPTION="-X $2"
       shift; shift
       ;;
+    -h|--help)
+      usage $COMMAND_NAME 0;;
     -*)
       echo "Unknown option $1" ; exit 1 ;;
     *)
@@ -94,7 +97,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 if [ "$BRANCH" == "" ]; then
-  usage $COMMAND_NAME
+  usage $COMMAND_NAME 1
 fi
 
 BASH_FULL_VERSION=$((${BASH_VERSINFO[0]} * 10000 + ${BASH_VERSINFO[1]} * 100 + ${BASH_VERSINFO[2]}))
