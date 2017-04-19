@@ -13,6 +13,8 @@ usage() {
   $ECHO "git $COMMAND_NAME [options] <pull-request-id>"
   $ECHO
   $ECHO "Options:"
+  $ECHO "-h, --help         \tthis help message"
+  $ECHO
   $ECHO "-d, --debug        \tenable debug output"
   $ECHO "    --https        \taccess GitHub over https (default)"
   $ECHO "    --ssh          \taccess GitHub over ssh"
