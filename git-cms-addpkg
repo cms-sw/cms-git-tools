@@ -14,10 +14,10 @@ usage () {
   $ECHO "git $COMMAND_NAME [options] -f FILE"
   $ECHO
   $ECHO "Options:"
-  $ECHO "-h                 \tthis help message"
+  $ECHO "-h, --help         \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
-  $ECHO "-f, --file FILE    \tread the list of packages to be checkoed out from FILE"
+  $ECHO "-f, --file FILE    \tread the list of packages to be checked out from FILE"
   $ECHO "-q, --quiet, -z    \tdo not print out progress"
   if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
     $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
