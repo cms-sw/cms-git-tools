@@ -1,16 +1,16 @@
-.TH GIT_CMS_MERGE_TOPIC 1 LOCAL
+.TH GIT_CMS_CHECKOUT_TOPIC 1 LOCAL
 
 .SH NAME
 
-git-cms-merge-topic - CMSSW helper to merge a given branch or pull request into your workarea.
+git-cms-checkout-topic - CMSSW helper to checkout a given branch or pull request into your workarea (without merging).
 
 .SH SYNOPSIS
 
-.B git cms-merge-topic <pull-request-id>
+.B git cms-checkout-topic <pull-request-id>
 
-.B git cms-merge-topic <official-cmssw-branch>
+.B git cms-checkout-topic <official-cmssw-branch>
 
-.B git cms-merge-topic <github-user>:<branch>
+.B git cms-checkout-topic <github-user>:<branch>
 
 .SH OPTIONS
 
@@ -34,31 +34,16 @@ Access GitHub over ssh.
 
 .TP 5
 
---no-commit
-
-Do not do the final commit when merging.
-
-.TP 5
-
--s, --strategy
-
-Specify strategy when merging (see git merge documentation).
-
-.TP 5
-
--X, --strategy-option
-
-Specify strategy option when merging (see git merge documentation).
-
-.TP 5
-
 -u, --unsafe
 
 Do not perform checkdeps at the end of the checkout.
 
 .SH DESCRIPTION
 
-This is the git equivalent of the old CVS cmstc tagset <tagset-id> command.
+This is an alternate mode for git-cms-merge-topic.
+It is useful to recreate a working area or rebase a branch,
+by checking out only the packages modified
+in the specified branch (and their dependencies) without performing a merge.
 There are three different syntaxes, depending on whether you want to merge a pull
 request (specified via its numeric id, <pull-request-id>), a generic branch in
 the official-cmssw (https://github.com/cms-sw/cmssw) repository, or a branch in
