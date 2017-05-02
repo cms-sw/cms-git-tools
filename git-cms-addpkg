@@ -9,20 +9,58 @@ case `uname` in
 esac
 
 usage () {
-  $ECHO "git cms-addpkg [options] Subsystem/Package [Subsystem/Package ...] "
-  $ECHO "git cms-addpkg [options] -f FILE"
+  COMMAND_NAME=$1
+  $ECHO "git $COMMAND_NAME [options] Subsystem/Package [Subsystem/Package ...] "
+  $ECHO "git $COMMAND_NAME [options] -f FILE"
   $ECHO
   $ECHO "Options:"
-  $ECHO "-h                 \tthis help message"
+  $ECHO "-h, --help         \tthis help message"
   $ECHO
   $ECHO "-d, --debug        \tenable debug output"
-  $ECHO "-f, --file FILE    \tread the list of packages to be checkoed out from FILE"
-  $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
-  $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
+  $ECHO "-f, --file FILE    \tread the list of packages to be checked out from FILE"
   $ECHO "-q, --quiet, -z    \tdo not print out progress"
-  $ECHO "-y, --yes          \tassume yes to all questions"
-  exit $1
+  if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
+    $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
+    $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
+    $ECHO "-y, --yes          \tassume yes to all questions"
+  fi
+  exit $2
 }
+
+checkPkgFile () {
+  INPUT_FILE="$1"
+  CURRENT_BRANCH="$2"
+  for PKG_NAME in `cat $INPUT_FILE`; do
+    if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
+      [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
+      echo $PKG_NAME
+    fi
+  done
+  if [ "$HEADER" ]; then
+    exit 1
+  fi
+}
+
+checkPkgList () {
+  PACKAGES="$1"
+  CURRENT_BRANCH="$2"
+  for PKG_NAME in $PACKAGES; do
+    if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
+      [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
+      echo $PKG_NAME
+    fi
+  done
+  if [ "$HEADER" ]; then
+    exit 1
+  fi
+}
+
+COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
+ACTION="Checking out"
+if [ "$COMMAND_NAME" = "cms-rmpkg" ]; then
+  RMPKG=true
+  ACTION="Removing"
+fi
 
 DEBUG=0
 VERBOSE=1
@@ -43,7 +81,7 @@ verbose () {
 while [ "$#" != 0 ]; do
   case "$1" in
     -h | --help )
-      usage 0;;
+      usage $COMMAND_NAME 0;;
     -d | --debug )
       INITOPTIONS="$INITOPTIONS $1"
       shift; set -x; DEBUG=1 ;;
@@ -57,7 +95,7 @@ while [ "$#" != 0 ]; do
       elif [ ! -r "$INPUT_FILE" ]; then
         $ECHO "git cms-addpkg: file $INPUT_FILE does not exist or is not readable"
         $ECHO
-        usage 1
+        usage $COMMAND_NAME 1
       fi
       unset OPTION
       ;;
@@ -74,7 +112,7 @@ while [ "$#" != 0 ]; do
       INITOPTIONS="$INITOPTIONS $1"
       shift;;
     -*)
-      $ECHO "git cms-addpkg: unknown option $1"; $ECHO; usage 1;;
+      $ECHO "git cms-addpkg: unknown option $1"; $ECHO; usage $COMMAND_NAME 1;;
     *)
       if [ "$INPUT_FILE" == "" ]; then
         # check out a list of packages
@@ -82,17 +120,17 @@ while [ "$#" != 0 ]; do
         shift
       else
         # check out a list of packages via -f / --file FILE
-        $ECHO "git cms-addpkg: you cannot specify a package and input from file at the same time."
+        $ECHO "git $COMMAND_NAME: you cannot specify a package and input from file at the same time."
         $ECHO
-        usage 1
+        usage $COMMAND_NAME 1
       fi
     ;;
   esac
 done
 if [ "$PACKAGES" == "" ] && [ "$INPUT_FILE" == "" ] ; then
-  $ECHO "git cms-addpkg: you need to specify at least one package or input file."
+  $ECHO "git $COMMAND_NAME: you need to specify at least one package or input file."
   $ECHO
-  usage 1
+  usage $COMMAND_NAME 1
 fi
 
 BASH_FULL_VERSION=$((${BASH_VERSINFO[0]} * 10000 + ${BASH_VERSINFO[1]} * 100 + ${BASH_VERSINFO[2]}))
@@ -145,11 +183,16 @@ fi
 
 # initialize the local repository
 if [ -z "$CMSSW_BASE" ]; then
-  $ECHO "CMSSW environment not setup, please run 'cmsenv' before 'git cms-addpkg'."
+  $ECHO "CMSSW environment not setup, please run 'cmsenv' before 'git $COMMAND_NAME'."
   exit 1
 fi
 if ! [ -d $CMSSW_BASE/src/.git ]; then
-  git cms-init $INITOPTIONS
+  if [ "$COMMAND_NAME" == "cms-rmpkg" ]; then
+    $ECHO "git $COMMAND_NAME : nothing to do."
+    exit 1
+  else
+    git cms-init $INITOPTIONS
+  fi
 fi
 
 cd $CMSSW_BASE/src
@@ -166,7 +209,7 @@ esac
 
 # check if using a reference repository
 if [ "$CMSSW_GIT_REFERENCE" == "" ] && [ -f $CMSSW_BASE/src/.git/objects/info/alternates ]; then
-  CMSSW_GIT_REFERENCE=`cat .git/objects/info/alternates | head -n1`
+  CMSSW_GIT_REFERENCE=`cat $CMSSW_BASE/src/.git/objects/info/alternates | head -n1`
 fi
 
 # if using a personal reference repository, update it from the official one
@@ -179,48 +222,78 @@ if [ "$(git status --porcelain --untracked=no | grep '^[ACDMRU]')" ]; then
   exit 1
 fi
 
+CURRENT_BRANCH=`git symbolic-ref --short HEAD`
+
+# check if requested packages are present to be removed
+if [ "$COMMAND_NAME" == "cms-rmpkg" ]; then
+  if [ "$INPUT_FILE" ]; then
+    checkPkgFile "$INPUT_FILE" "$CURRENT_BRANCH"
+  else
+    checkPkgList "$PACKAGES" "$CURRENT_BRANCH"
+  fi
+fi
+
+# create temporary sparse checkout file
+touch $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
+
+# add the requested package(s) to the temporary file
 if [ "$INPUT_FILE" ]; then
-  verbose "Checking out packages"
+  verbose "$ACTION packages"
   verbose "`cat "$INPUT_FILE"`"
 
-  # add the requested package(s) to the sparse checkout
-  cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
-  cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
-  cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout
-  rm -f .git/info/sparse-checkout-new
+  cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
 else
-  verbose "Checking out packages"
+  verbose "$ACTION packages"
   for PKG_NAME in $PACKAGES; do
     verbose $PKG_NAME
   done
 
-  # add the requested package(s) to the sparse checkout
-  cp -f $CMSSW_BASE/src/.git/info/sparse-checkout $CMSSW_BASE/src/.git/info/sparse-checkout-new
   for PKG_NAME in $PACKAGES; do
-    echo $PKG_NAME | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+    echo $PKG_NAME | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
   done
-  cat .git/info/sparse-checkout-new | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout
-  rm -f .git/info/sparse-checkout-new
 fi
 
-git read-tree -mu HEAD
-CURRENT_BRANCH=`git symbolic-ref --short HEAD`
-
-if [ "$INPUT_FILE" ]; then
-  for PKG_NAME in `cat $INPUT_FILE`; do
-    if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
-      [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
-      echo $PKG_NAME
+# add or remove from the real sparse checkout file
+if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
+  cat $CMSSW_BASE/src/.git/info/sparse-checkout-tmp | while read LINE; do
+    # remove any exclusion line(s)
+    grep -v "^\!$LINE" $CMSSW_BASE/src/.git/info/sparse-checkout > $CMSSW_BASE/src/.git/info/sparse-checkout-new
+    mv $CMSSW_BASE/src/.git/info/sparse-checkout-new $CMSSW_BASE/src/.git/info/sparse-checkout
+    # if addition line not present, append it
+    if ! grep -q -x "$LINE" $CMSSW_BASE/src/.git/info/sparse-checkout; then
+      echo "$LINE" >> $CMSSW_BASE/src/.git/info/sparse-checkout
     fi
   done
-  [ "$HEADER" ] && exit 1
 else
-  for PKG_NAME in $PACKAGES; do
-    if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
-      [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
-      echo $PKG_NAME
+  cat $CMSSW_BASE/src/.git/info/sparse-checkout-tmp | while read LINE; do
+    # remove any addition line(s)
+    grep -v "^$LINE" $CMSSW_BASE/src/.git/info/sparse-checkout > $CMSSW_BASE/src/.git/info/sparse-checkout-new
+    mv $CMSSW_BASE/src/.git/info/sparse-checkout-new $CMSSW_BASE/src/.git/info/sparse-checkout
+    # special case: append exclusion line for package (if whole subsystem previously added)
+    if echo $LINE | grep -q "${LEADING_SLASH}.*/.*/"; then
+      SUBSYSTEM=${LINE%/*/}/
+      if grep -q -x "$SUBSYSTEM" $CMSSW_BASE/src/.git/info/sparse-checkout; then
+        echo "!$LINE" >> $CMSSW_BASE/src/.git/info/sparse-checkout
+      fi
     fi
   done
-  [ "$HEADER" ] && exit 1
 fi
-exit 0
+rm -f $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
+
+# sort, keep exclusion lines at end
+grep -v "^\!" $CMSSW_BASE/src/.git/info/sparse-checkout | sort -u > $CMSSW_BASE/src/.git/info/sparse-checkout-new
+grep "^\!" $CMSSW_BASE/src/.git/info/sparse-checkout | sort -u >> $CMSSW_BASE/src/.git/info/sparse-checkout-new
+mv $CMSSW_BASE/src/.git/info/sparse-checkout-new $CMSSW_BASE/src/.git/info/sparse-checkout
+
+# update the working area
+git read-tree -mu HEAD
+
+# check if requested packages were successfully added
+if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
+  if [ "$INPUT_FILE" ]; then
+    checkPkgFile "$INPUT_FILE" "$CURRENT_BRANCH"
+  else
+    checkPkgList "$PACKAGES" "$CURRENT_BRANCH"
+  fi
+  exit 0
+fi

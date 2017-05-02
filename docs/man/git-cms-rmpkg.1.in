@@ -1,0 +1,39 @@
+.TH GIT_CMS_RMPKG 1 LOCAL
+
+.SH NAME
+
+git-cms-rmpkg - CMSSW helper to remove (un-checkout) single packages or subsystems from the git repository in the working area.
+
+.SH SYNOPSIS
+
+.B git cms-rmpkg [options] <subsystem/package> [<subsystem/package> ...] 
+
+.B git cms-rmpkg [options] -f FILE
+
+.SH DESCRIPTION
+
+This command can undo the actions of the git-cms-addpkg command,
+removing <package> (e.g. FWCore/Version) or <subsystem> (e.g. FWCore)
+from your working area (but NOT from the repository itself).
+This is useful if you decide you do not want to recompile the package/subsystem,
+but instead to use the precompiled library for the release.
+
+.SH OPTIONS
+
+.TP 5
+
+-d, --debug        
+
+enable debug output
+
+.TP 5
+
+-f, --file FILE
+
+read the list of packages to be checked out from FILE
+
+.TP 5  
+
+-q, --quiet, -z
+
+do not print out progress
