@@ -251,16 +251,13 @@ fi
 
 # check if a shared reference repository is available, otherwise set up a personal one
 if [ "$CMSSW_GIT_REFERENCE" = "" ]; then
-  case `hostname -f` in
-    *.cern.ch)
-      if [ -e /afs/cern.ch/cms/git-cmssw-mirror/cmssw.git ]; then
-        CMSSW_GIT_REFERENCE=/afs/cern.ch/cms/git-cmssw-mirror/cmssw.git
-      else
-        CMSSW_GIT_REFERENCE=~/.cmsgit-cache
-      fi
-    ;;
-    *) CMSSW_GIT_REFERENCE=~/.cmsgit-cache ;;
-  esac
+  if [ -e /cvmfs/cms-ib.cern.ch/git/cms-sw/cmssw.git ] ; then
+    CMSSW_GIT_REFERENCE=/cvmfs/cms-ib.cern.ch/git/cms-sw/cmssw.git
+  elif [ -e /cvmfs/cms.cern.ch/cmssw.git.daily ] ; then
+    CMSSW_GIT_REFERENCE=/cvmfs/cms.cern.ch/cmssw.git.daily
+  else
+    CMSSW_GIT_REFERENCE=~/.cmsgit-cache
+  fi
 fi
 
 if [ ! -e $CMSSW_GIT_REFERENCE ]; then
