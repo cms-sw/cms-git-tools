@@ -24,6 +24,8 @@ usage() {
     $ECHO "-X, --strategy-option     \tspecify strategy option when merging"
   fi
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
+  $ECHO "-A, --all-deps     \tperform checkdeps for all dependencies (header, python, BuildFile)"
+  $ECHO "                   \t(default: header, python)"
   exit $CODE
 }
 
@@ -43,6 +45,10 @@ while [ $# -gt 0 ]; do
   case $1 in 
     -u|--unsafe)
       UNSAFE=true
+      shift
+      ;;
+    -A|--all-deps)
+      ALLCHECKDEPS=-A
       shift
       ;;
     -d|--debug)
@@ -199,5 +205,5 @@ fi
 git branch -D $TEMP_BRANCH >&${debug} || true
 # Do checkdeps unless not specified.
 if [ ! "X$UNSAFE" = Xtrue ]; then
-  git cms-checkdeps -a
+  git cms-checkdeps -a $ALLCHECKDEPS
 fi
