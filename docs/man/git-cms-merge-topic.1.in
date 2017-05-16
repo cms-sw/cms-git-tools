@@ -56,6 +56,13 @@ Specify strategy option when merging (see git merge documentation).
 
 Do not perform checkdeps at the end of the checkout.
 
+.TP 5
+
+-A, --all-deps
+
+Perform checkdeps for all dependencies (header, python, BuildFile).
+(Default: header, python.)
+
 .SH DESCRIPTION
 
 This is the git equivalent of the old CVS cmstc tagset <tagset-id> command.
