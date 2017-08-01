@@ -1,0 +1,107 @@
+GIT_CMS_REBASE_TOPIC(1)                                GIT_CMS_REBASE_TOPIC(1)
+
+
+
+NNAAMMEE
+       git-cms-rebase-topic  -  CMSSW  helper to rebase a given branch or pull
+       request.
+
+
+SSYYNNOOPPSSIISS
+       ggiitt ccmmss--rreebbaassee--ttooppiicc <<ppuullll--rreeqquueesstt--iidd>>
+
+       ggiitt ccmmss--rreebbaassee--ttooppiicc <<ooffffiicciiaall--ccmmssssww--bbrraanncchh>>
+
+       ggiitt ccmmss--rreebbaassee--ttooppiicc <<ggiitthhuubb--uusseerr>>::<<bbrraanncchh>>
+
+
+OOPPTTIIOONNSS
+       -d, --debug
+
+            Enable debug output.
+
+
+
+       --https
+
+            Access GitHub over https (default).
+
+
+
+       --ssh
+
+            Access GitHub over ssh.
+
+
+
+       --no-backup
+
+            Don’t create a backup branch.
+
+
+
+       --backup-name
+
+            Specify suffix for backup branch (default = _backup).
+
+
+
+       -s, --strategy
+
+            Specify strategy when merging (see git merge documentation).
+
+
+
+       -X, --strategy-option
+
+            Specify strategy option when merging  (see  git  merge  documenta-
+            tion).
+
+
+
+       -o, --old-base
+
+            Specify old base for merge-base or rebase (not used by default).
+
+
+
+       -n, --new-base
+
+            Specify  new  base for merge-base or rebase (default = $CMSSW_VER-
+            SION).
+
+
+
+       -u, --unsafe
+
+            Do not perform checkdeps at the end of the checkout.
+
+
+
+       -A, --all-deps
+
+            Perform checkdeps for all  dependencies  (header,  python,  Build-
+            File).  (Default: header, python.)
+
+
+DDEESSCCRRIIPPTTIIOONN
+       This  is  an  alternate  mode for git-cms-merge-topic.  It is useful to
+       rebase a branch or move to a new IB/release, by checking out  only  the
+       packages  modified in the specified branch (and their dependencies) and
+       then performing a rebase.
+
+       By default, it uses this rebase syntax: git rebase [new_base]  [branch]
+       If old_base is specified, it uses this rebase syntax: git rebase --onto
+       [new_base] [old_base] [branch] If you want access to  advanced  options
+       for  rebase,  use git-cms-checkout-topic and then call git rebase manu-
+       ally.
+
+       There are three different syntaxes, depending on whether  you  want  to
+       merge a pull request (specified via its numeric id, <pull-request-id>),
+       a  generic  branch  in  the   official-cmssw   (https://github.com/cms-
+       sw/cmssw)  repository,  or  a  branch  in  the repository of some other
+       github user (specified by its github username, <github-user>).
+
+
+
+                                     LOCAL             GIT_CMS_REBASE_TOPIC(1)
