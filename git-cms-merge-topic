@@ -19,6 +19,8 @@ usage() {
   $ECHO "    --https        \taccess GitHub over https (default)"
   $ECHO "    --ssh          \taccess GitHub over ssh"
   if [ "$COMMAND_NAME" = "cms-merge-topic" ]; then
+    $ECHO "-b, --backup       \tcreate backup branch"
+    $ECHO "    --backup-name  \tspecify suffix for backup branch (default = _backup)"
     $ECHO "    --no-commit    \tdo not do the final commit when merging"
     $ECHO "-s, --strategy     \tspecify strategy when merging"
     $ECHO "-X, --strategy-option     \tspecify strategy option when merging"
@@ -35,6 +37,7 @@ NORMAL='\033[0m'
 
 DEBUG=0
 PROTOCOL=https
+BACKUP_NAME=_backup
 
 COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
 if [ "$COMMAND_NAME" = "cms-checkout-topic" ]; then
@@ -66,6 +69,14 @@ while [ $# -gt 0 ]; do
     --no-commit )
       NO_COMMIT=--no-commit 
       shift
+      ;;
+    -b | --backup )
+      BACKUP=true
+      shift
+      ;;
+    --backup-name )
+      BACKUP_NAME=$2
+      shift; shift
       ;;
     -s | --strategy )
       MERGE_STRATEGY="-s $2"
@@ -185,6 +196,12 @@ git checkout $TEMP_BRANCH >&${debug}
 MERGE_BASE=`git merge-base $GITHUB_USER/$BRANCH $CURRENT_BRANCH`
 git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
 git read-tree -mu HEAD
+
+# optional backup
+if [ "$BACKUP" = "true" ]; then
+  git branch ${LOCAL_BRANCH}${BACKUP_NAME} $GITHUB_USER/$BRANCH
+fi
+
 # in no-merge case, just checkout a new branch
 if [ "$NOMERGE" = "true" ]; then
   git checkout -b $LOCAL_BRANCH $GITHUB_USER/$BRANCH

@@ -34,6 +34,18 @@ Access GitHub over ssh.
 
 .TP 5
 
+-b, --backup
+
+Create backup branch before merging.
+
+.TP 5
+
+--backup-name
+
+Specify suffix for backup branch (default = _backup).
+
+.TP 5
+
 --no-commit
 
 Do not do the final commit when merging.
