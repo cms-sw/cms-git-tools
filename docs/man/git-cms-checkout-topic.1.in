@@ -34,6 +34,12 @@ Access GitHub over ssh.
 
 .TP 5
 
+-o, --old-base
+
+Specify old base for merge-base or rebase (not used by default).
+
+.TP 5
+
 -u, --unsafe
 
 Do not perform checkdeps at the end of the checkout.
@@ -48,7 +54,7 @@ Perform checkdeps for all dependencies (header, python, BuildFile).
 .SH DESCRIPTION
 
 This is an alternate mode for git-cms-merge-topic.
-It is useful to recreate a working area or rebase a branch,
+It is useful to recreate a working area or setup a patch release,
 by checking out only the packages modified
 in the specified branch (and their dependencies) without performing a merge.
 There are three different syntaxes, depending on whether you want to merge a pull

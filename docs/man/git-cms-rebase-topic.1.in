@@ -1,16 +1,16 @@
-.TH GIT_CMS_MERGE_TOPIC 1 LOCAL
+.TH GIT_CMS_REBASE_TOPIC 1 LOCAL
 
 .SH NAME
 
-git-cms-merge-topic - CMSSW helper to merge a given branch or pull request into your workarea.
+git-cms-rebase-topic - CMSSW helper to rebase a given branch or pull request.
 
 .SH SYNOPSIS
 
-.B git cms-merge-topic <pull-request-id>
+.B git cms-rebase-topic <pull-request-id>
 
-.B git cms-merge-topic <official-cmssw-branch>
+.B git cms-rebase-topic <official-cmssw-branch>
 
-.B git cms-merge-topic <github-user>:<branch>
+.B git cms-rebase-topic <github-user>:<branch>
 
 .SH OPTIONS
 
@@ -46,12 +46,6 @@ Specify suffix for backup branch (default = _backup).
 
 .TP 5
 
---no-commit
-
-Do not do the final commit when merging.
-
-.TP 5
-
 -s, --strategy
 
 Specify strategy when merging (see git merge documentation).
@@ -70,6 +64,12 @@ Specify old base for merge-base or rebase (not used by default).
 
 .TP 5
 
+-n, --new-base
+
+Specify new base for merge-base or rebase (default = $CMSSW_VERSION).
+
+.TP 5
+
 -u, --unsafe
 
 Do not perform checkdeps at the end of the checkout.
@@ -83,7 +83,18 @@ Perform checkdeps for all dependencies (header, python, BuildFile).
 
 .SH DESCRIPTION
 
-This is the git equivalent of the old CVS cmstc tagset <tagset-id> command.
+This is an alternate mode for git-cms-merge-topic.
+It is useful to rebase a branch or move to a new IB/release,
+by checking out only the packages modified
+in the specified branch (and their dependencies) and then performing a rebase.
+
+By default, it uses this rebase syntax:
+git rebase [new_base] [branch]
+If old_base is specified, it uses this rebase syntax:
+git rebase --onto [new_base] [old_base] [branch]
+If you want access to advanced options for rebase, use git-cms-checkout-topic
+and then call git rebase manually.
+
 There are three different syntaxes, depending on whether you want to merge a pull
 request (specified via its numeric id, <pull-request-id>), a generic branch in
 the official-cmssw (https://github.com/cms-sw/cmssw) repository, or a branch in
