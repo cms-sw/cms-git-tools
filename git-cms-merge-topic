@@ -148,7 +148,7 @@ TEMP_BRANCH=${TEMP_BRANCH_WORD}-attempt
 
 # initialize the local repository
 if [ -z "$CMSSW_BASE" ]; then
-  echo "CMSSW environment not setup, please run 'cmsenv' before 'git cms-merge-topic'."
+  echo "CMSSW environment not setup, please run 'cmsenv' before 'git $COMMAND_NAME'."
   exit 1
 fi
 if ! [ -d $CMSSW_BASE/src/.git ]; then
