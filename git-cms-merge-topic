@@ -20,7 +20,7 @@ usage() {
   $ECHO "    --ssh          \taccess GitHub over ssh"
   # not for checkout-topic
   if [ "$COMMAND_NAME" != "cms-checkout-topic" ]; then
-    $ECHO "-b, --backup       \tcreate backup branch"
+    $ECHO "    --no-backup       \tdon't create backup branch"
     $ECHO "    --backup-name  \tspecify suffix for backup branch (default = _backup)"
     $ECHO "-s, --strategy     \tspecify strategy when merging"
     $ECHO "-X, --strategy-option     \tspecify strategy option when merging"
@@ -46,6 +46,7 @@ NORMAL='\033[0m'
 
 DEBUG=0
 PROTOCOL=https
+BACKUP=true
 BACKUP_NAME=_backup
 
 COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
@@ -79,8 +80,8 @@ while [ $# -gt 0 ]; do
       NO_COMMIT=--no-commit 
       shift
       ;;
-    -b | --backup )
-      BACKUP=true
+    --no-backup )
+      BACKUP=""
       shift
       ;;
     --backup-name )
