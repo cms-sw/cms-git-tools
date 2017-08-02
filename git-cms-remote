@@ -1,0 +1,115 @@
+#! /bin/bash
+
+function usage() {
+  cat <<@EOF
+usage: git cms-remote add [--ssh|--https] [-w|--enable-push] USER
+
+Description:
+  Adds a remote repository called USER pointing to https://github.com/USER/cmssw.git .
+  By default only fethcing from this remote is enabled, using the HTTPS protocol.
+  The default behaviour is to immediately fetch the new remote repository; this can be
+  disabled with the '--no-fetch' option.
+  Pushing can be enabled with the '-w' or '--enable-push' option; the default is 
+  to use the SSH protocol.
+  If '--ssh' is given, the SSH protocol will be used for all URLs.
+  If '--https' is given, the HTTPS protocol will be used for all URLS.
+
+Options:
+    -h|--help           display this usage message
+    --https             use the HTTPS protocol for fetching and pushing
+    --ssh               use the SSH protocol for fetching and pushing
+    --fetch             automatically fetch the new remote (default)
+    --no-fetch          do not automatically fetch the new remote
+    -w|--enable-push    enable pushing to the new remote
+@EOF
+  exit $1
+}
+
+PROTOCOL=mixed
+READONLY=true
+FETCH=true
+COMMAND=
+TARGET=
+
+while [ "$#" != 0 ]; do
+  case "$1" in
+    -h | --help )
+      usage 0
+      ;;
+    --https )
+      INITOPTIONS="$INITOPTIONS $1"
+      PROTOCOL=https
+      shift
+      ;;
+    --ssh )
+      INITOPTIONS="$INITOPTIONS $1"
+      PROTOCOL=ssh
+      shift
+      ;;
+    --fetch )
+      FETCH=true
+      shift
+      ;;
+    --no-fetch )
+      FETCH=false
+      shift
+      ;;
+    -w | --enable-push )
+      READONLY=false
+      shift
+      ;;
+    -*)
+      echo Unknown option $1
+      usage 1
+      ;;
+    *)
+      if [ "$COMMAND" == "" ]; then
+        COMMAND=$1
+      elif [ "$TARGET" == "" ]; then
+        TARGET=$1
+      else
+        echo Unexpected argument $1
+        usage 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+# initialize the local repository
+if [ -z "$CMSSW_BASE" ]; then
+  echo "CMSSW environment not setup, please run 'cmsenv' before 'git cms-remote'."
+  exit 1
+fi
+if ! [ -d $CMSSW_BASE/src/.git ]; then
+  git cms-init $INITOPTIONS
+fi
+
+cd $CMSSW_BASE/src
+
+case "$COMMAND" in
+  add )
+    if [ "$TARGET" == "" ]; then
+      usage 1
+    fi
+    if [ "$PROTOCOL" == "ssh" ]; then
+      git remote add $TARGET git@github.com:$TARGET/cmssw.git
+    else
+      git remote add $TARGET https://github.com/$TARGET/cmssw.git
+    fi
+    if [ "$READONLY" == "true" ]; then
+      git remote set-url --push $TARGET disabled
+    elif [ "$PROTOCOL" == "https" ]; then
+      git remote set-url --push $TARGET https://github.com/$TARGET/cmssw.git
+    else
+      git remote set-url --push $TARGET git@github.com:$TARGET/cmssw.git
+    fi
+    if [ "$FETCH" == "true" ]; then
+      git fetch $TARGET
+    fi
+    ;;
+  * )
+    echo Unknown subcommand: $COMMAND
+    usage 1
+    ;;
+esac
