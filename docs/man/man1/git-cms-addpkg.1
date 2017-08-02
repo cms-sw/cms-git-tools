@@ -3,52 +3,55 @@ GIT_CMS_ADDPKG(1)                                            GIT_CMS_ADDPKG(1)
 
 
 NNAAMMEE
-       git‐cms‐addpkg  ‐ CMSSW helper to checkout single packages from the git
-       repository.
+       git-cms-addpkg  - CMSSW helper to checkout single packages from the git
+       repository in the working area.
 
 
 SSYYNNOOPPSSIISS
-       ggiitt ccmmss‐‐aaddddppkkgg [[ooppttiioonnss]] <<ppaacckkaaggee>> [[<<ttaagg>>]]
+       ggiitt ccmmss--aaddddppkkgg [[ooppttiioonnss]] <<ssuubbssyysstteemm//ppaacckkaaggee>> [[<<ssuubbssyysstteemm//ppaacckkaaggee>>  ......]]
+
+       ggiitt ccmmss--aaddddppkkgg [[ooppttiioonnss]] --ff FFIILLEE
 
 
 DDEESSCCRRIIPPTTIIOONN
-       This is the git equivalent of the old CVS addpkg commant. <package>  is
-       the  package  you  want to checkout (e.g. FWCore/Version), <tag> is the
-       optional release tag which you want to checkout. By default it will use
-       the tag used for the current release area.
+       This  is the git equivalent of the old CVS addpkg command. <package> is
+       the package you want to checkout (e.g. FWCore/Version), or  <subsystem>
+       is  the  subsystem  you  want  to checkout (e.g. FWCore).  If the local
+       repository has not been initialized, it will call git-cms-init.
 
 
 OOPPTTIIOONNSS
-       The  defaults  should be just fine, however you can fine tune output of
-       the command with the following options.
+       -d, --debug
+
+            enable debug output
 
 
 
-       ‐d, ‐‐debug
+       -f, --file FILE
 
-            enable debug output"
-
-
-
-       ‐f, ‐‐force
-
-            force dangerous operations
+            read the list of packages to be checked out from FILE
 
 
 
-       ‐‐https
-
-            use https, rather than ssh to access your personal repository
-
-
-
-       ‐q, ‐‐quiet
+       -q, --quiet, -z
 
             do not print out progress
 
 
 
-       ‐y, ‐‐yes
+       --https
+
+            use https, rather than ssh to access your personal repository
+
+
+
+       --ssh
+
+            use ssh, rather than https to access the official repository
+
+
+
+       -y, --yes
 
             assume yes to all questions
 
