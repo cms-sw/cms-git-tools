@@ -240,7 +240,7 @@ if [ "$NOMERGE" = "true" ]; then
   fi
 # otherwise, perform merge
 else
-  git merge $NO_COMMIT $MERGE_STRATEGY $STRATEGY_OPTION --no-ff -m "Merged $BRANCH from repository $GITHUB_USER" $GITHUB_USER/$BRANCH || { echo "Unable to merge branch $BRANCH from repository $GITHUB_USER." ; exit 1; }
+  git merge $NO_COMMIT $MERGE_STRATEGY $STRATEGY_OPTION --no-ff -m "Merged $BRANCH from repository $GITHUB_USER with cms-merge-topic" $GITHUB_USER/$BRANCH || { echo "Unable to merge branch $BRANCH from repository $GITHUB_USER." ; exit 1; }
   if [ ! X$NO_COMMIT = X ]; then
     echo \"--no-commit\" specified: not committing and leaving you on the $TEMP_BRANCH branch.\n Use git-status to check changes. ; exit 0
   fi
