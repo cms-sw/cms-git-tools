@@ -82,7 +82,7 @@ fi
 
 case `git --version` in 
   git\ version\ 1.7*)
-    # git 1.7.x does not support a leading slash in /gitignore and .git/info/sparse-checkout
+    # git 1.7.x does not support a leading slash in .gitignore and .git/info/sparse-checkout
     LEADING_SLASH=
   ;;
   *)

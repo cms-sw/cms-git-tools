@@ -390,8 +390,11 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
 
   # setup sparse checkout
   git config core.sparsecheckout true
-  echo "${LEADING_SLASH}.gitignore" > $CMSSW_BASE/src/.git/info/sparse-checkout
-  git checkout $CMSSW_BRANCH -- .gitignore
+  {
+    echo "${LEADING_SLASH}.gitignore"
+    echo "${LEADING_SLASH}.clang-tidy"
+    echo "${LEADING_SLASH}.clang-format"
+  } > $CMSSW_BASE/src/.git/info/sparse-checkout
   git read-tree -mu HEAD
 fi
 
