@@ -256,3 +256,10 @@ git branch -D $TEMP_BRANCH >&${debug} || true
 if [ ! "X$UNSAFE" = Xtrue ]; then
   git cms-checkdeps -a $ALLCHECKDEPS
 fi
+# check if topic branch is behind release branch
+if [ "$COMMAND_NAME" = "cms-checkout-topic" ]; then
+  NBEHIND=$(git rev-list $LOCAL_BRANCH..$CURRENT_BRANCH | wc -l)
+  if [ "$NBEHIND" -gt 0 ]; then
+    $ECHO "Warning: $LOCAL_BRANCH is behind $CURRENT_BRANCH. You may not be able to compile or run."
+  fi
+fi
