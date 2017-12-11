@@ -220,8 +220,8 @@ MERGE_BASE=`git merge-base $GITHUB_USER/$BRANCH $MERGE_BASE_BRANCH`
 git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
 git read-tree -mu HEAD
 
-# optional backup
-if [ "$BACKUP" = "true" ]; then
+# optional backup (not for checkout-topic)
+if [ "$BACKUP" = "true" ] && [ "$COMMAND_NAME" != "cms-checkout-topic" ]; then
   git branch ${LOCAL_BRANCH}${BACKUP_NAME} $GITHUB_USER/$BRANCH
 fi
 
