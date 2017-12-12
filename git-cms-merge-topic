@@ -8,9 +8,7 @@ esac
 usage() {
   COMMAND_NAME=$1
   CODE=$2
-  $ECHO "git $COMMAND_NAME [options] <github-user>:<branch>"
-  $ECHO "git $COMMAND_NAME [options] <official-cmssw-branch>"
-  $ECHO "git $COMMAND_NAME [options] <pull-request-id>"
+  $ECHO "git $COMMAND_NAME [options] [<github-user>:]{<branch>|<pull-request-id>}"
   $ECHO
   $ECHO "Options:"
   $ECHO "-h, --help         \tthis help message"
