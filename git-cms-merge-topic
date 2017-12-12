@@ -112,7 +112,7 @@ while [ $# -gt 0 ]; do
       fi
       # Handle branch options:
       #
-      # - Generic personal branch: `<user-name>:<branch-name>`
+      # - Generic personal branch or pull request: `<user-name>:<branch-name>|<pull-request-id>`
       # - Generic cms-sw branch: `<branch-name>`
       # - Pull request: `<pull-request-id>`
       GITHUB_USER=cms-sw ; 
