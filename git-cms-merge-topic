@@ -220,14 +220,14 @@ MERGE_BASE=`git merge-base $GITHUB_USER/$BRANCH $MERGE_BASE_BRANCH`
 git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
 git read-tree -mu HEAD
 
-# optional backup
-if [ "$BACKUP" = "true" ]; then
-  git branch ${LOCAL_BRANCH}${BACKUP_NAME} $GITHUB_USER/$BRANCH
+# optional backup (not for checkout-topic)
+if [ "$BACKUP" = "true" ] && [ "$COMMAND_NAME" != "cms-checkout-topic" ]; then
+  git branch -f ${LOCAL_BRANCH}${BACKUP_NAME} $GITHUB_USER/$BRANCH
 fi
 
 # in no-merge case, just checkout a new branch
 if [ "$NOMERGE" = "true" ]; then
-  git checkout -b $LOCAL_BRANCH $GITHUB_USER/$BRANCH
+  git checkout -B $LOCAL_BRANCH $GITHUB_USER/$BRANCH
   echo "Created branch $LOCAL_BRANCH to follow $BRANCH from repository $GITHUB_USER"
   # now try a rebase if desired
   if [ "$COMMAND_NAME" = "cms-rebase-topic" ]; then
