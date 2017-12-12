@@ -6,11 +6,7 @@ git-cms-merge-topic - CMSSW helper to merge a given branch or pull request into 
 
 .SH SYNOPSIS
 
-.B git cms-merge-topic <pull-request-id>
-
-.B git cms-merge-topic <official-cmssw-branch>
-
-.B git cms-merge-topic <github-user>:<branch>
+.B git cms-merge-topic [<github-user>:]{<branch>|<pull-request-id>}
 
 .SH OPTIONS
 
