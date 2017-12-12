@@ -8,9 +8,7 @@ esac
 usage() {
   COMMAND_NAME=$1
   CODE=$2
-  $ECHO "git $COMMAND_NAME [options] <github-user>:<branch>"
-  $ECHO "git $COMMAND_NAME [options] <official-cmssw-branch>"
-  $ECHO "git $COMMAND_NAME [options] <pull-request-id>"
+  $ECHO "git $COMMAND_NAME [options] [<github-user>:]{<branch>|<pull-request-id>}"
   $ECHO
   $ECHO "Options:"
   $ECHO "-h, --help         \tthis help message"
@@ -114,7 +112,7 @@ while [ $# -gt 0 ]; do
       fi
       # Handle branch options:
       #
-      # - Generic personal branch: `<user-name>:<branch-name>`
+      # - Generic personal branch or pull request: `<user-name>:<branch-name>|<pull-request-id>`
       # - Generic cms-sw branch: `<branch-name>`
       # - Pull request: `<pull-request-id>`
       GITHUB_USER=cms-sw ; 
@@ -124,7 +122,11 @@ while [ $# -gt 0 ]; do
         *:*)
           BRANCH=`echo $1 | cut -f2 -d:`
           LOCAL_BRANCH=$BRANCH
-          GITHUB_USER=`echo $1 | cut -f1 -d:` ;;
+          GITHUB_USER=`echo $1 | cut -f1 -d:`
+          case $BRANCH in
+            [0-9]*) LOCAL_BRANCH=pull/$BRANCH ; BRANCH=refs/pull/$BRANCH/head ;;
+          esac
+          ;;
         [0-9]*) 
           BRANCH=refs/pull/$1/head 
           LOCAL_BRANCH=pull/$1 ;; 

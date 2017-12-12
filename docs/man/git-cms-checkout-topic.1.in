@@ -6,11 +6,7 @@ git-cms-checkout-topic - CMSSW helper to checkout a given branch or pull request
 
 .SH SYNOPSIS
 
-.B git cms-checkout-topic <pull-request-id>
-
-.B git cms-checkout-topic <official-cmssw-branch>
-
-.B git cms-checkout-topic <github-user>:<branch>
+.B git cms-checkout-topic [<github-user>:]{<branch>|<pull-request-id>}
 
 .SH OPTIONS
 
