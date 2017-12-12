@@ -124,7 +124,11 @@ while [ $# -gt 0 ]; do
         *:*)
           BRANCH=`echo $1 | cut -f2 -d:`
           LOCAL_BRANCH=$BRANCH
-          GITHUB_USER=`echo $1 | cut -f1 -d:` ;;
+          GITHUB_USER=`echo $1 | cut -f1 -d:`
+          case $BRANCH in
+            [0-9]*) LOCAL_BRANCH=pull/$BRANCH ; BRANCH=refs/pull/$BRANCH/head ;;
+          esac
+          ;;
         [0-9]*) 
           BRANCH=refs/pull/$1/head 
           LOCAL_BRANCH=pull/$1 ;; 
