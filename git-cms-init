@@ -164,7 +164,7 @@ if [ "X$CMSSW_BASE" = X ]; then
 fi
 
 if [ -d $CMSSW_BASE/src/.git ]; then
-  CURRENT_BRANCH=`git symbolic-ref --short HEAD`
+  CURRENT_BRANCH=`git --git-dir=$CMSSW_BASE/src/.git symbolic-ref --short HEAD`
   CURRENT_TAG=`echo $CURRENT_BRANCH | sed -e's/^from-*//'`
 fi
 
