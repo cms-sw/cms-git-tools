@@ -82,7 +82,7 @@ if [ -z "$CMSSW_BASE" ]; then
   exit 1
 fi
 if ! [ -d $CMSSW_BASE/src/.git ]; then
-  git cms-init $INITOPTIONS
+  git cms-init --upstream-only $INITOPTIONS
 fi
 
 cd $CMSSW_BASE/src
