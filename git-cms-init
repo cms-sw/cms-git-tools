@@ -170,13 +170,13 @@ fi
 
 if [ "X$CMSSW_TAG" = X ]; then
   if [ "$CURRENT_BRANCH" ]; then
-    verbose "No release tags specified, using current branch $CURRENT_BRANCH."
+    debug "No release tags specified, using current branch $CURRENT_BRANCH."
     CMSSW_TAG=$CURRENT_TAG
   elif [ "$CMSSW_GIT_HASH" ]; then
-    verbose "No release tags specified, using default $CMSSW_GIT_HASH."
+    debug "No release tags specified, using default $CMSSW_GIT_HASH."
     CMSSW_TAG=$CMSSW_GIT_HASH
   else
-    verbose "No release tags specified, using default $CMSSW_VERSION."
+    debug "No release tags specified, using default $CMSSW_VERSION."
     CMSSW_TAG=$CMSSW_VERSION
   fi
 fi
@@ -418,4 +418,4 @@ if [ "X$GIT_CREDENTIAL_CACHE" = X ]; then
   esac
 fi
 
-verbose "You are on branch `git symbolic-ref --short HEAD`"
+debug "You are on branch `git symbolic-ref --short HEAD`"
