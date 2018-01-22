@@ -43,6 +43,8 @@ RED='\033[31m'
 NORMAL='\033[0m'
 
 DEBUG=0
+VERBOSE=1
+INITOPTIONS=""                      # options passed to git cms-init
 PROTOCOL=https
 BACKUP=true
 BACKUP_NAME=_backup
@@ -50,6 +52,9 @@ BACKUP_NAME=_backup
 COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
 if [ "$COMMAND_NAME" = "cms-checkout-topic" ] || [ "$COMMAND_NAME" = "cms-rebase-topic" ]; then
   NOMERGE=true
+fi
+if [ "$COMMAND_NAME" = "cms-merge-topic" ]; then
+  INITOPTIONS="--upstream-only"
 fi
 
 while [ $# -gt 0 ]; do
@@ -63,14 +68,23 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -d|--debug)
+      INITOPTIONS="$INITOPTIONS $1"
       DEBUG=1
       shift
       ;;
+    -q|--quiet)
+      INITOPTIONS="$INITOPTIONS $1"
+      VERBOSE=0
+      DEBUG=0
+      shift
+      ;;
     --https )
+      INITOPTIONS="$INITOPTIONS $1"
       PROTOCOL=https
       shift
       ;;
     --ssh )
+      INITOPTIONS="$INITOPTIONS $1"
       PROTOCOL=ssh
       shift
       ;;
