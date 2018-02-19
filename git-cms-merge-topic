@@ -129,22 +129,21 @@ while [ $# -gt 0 ]; do
       # - Generic personal branch or pull request: `<user-name>:<branch-name>|<pull-request-id>`
       # - Generic cms-sw branch: `<branch-name>`
       # - Pull request: `<pull-request-id>`
-      GITHUB_USER=cms-sw ; 
-      BRANCH=$1 ;
-      LOCAL_BRANCH=$1 ;
-      case $1 in
-        *:*)
-          BRANCH=`echo $1 | cut -f2 -d:`
-          LOCAL_BRANCH=$BRANCH
-          GITHUB_USER=`echo $1 | cut -f1 -d:`
-          case $BRANCH in
-            [0-9]*) LOCAL_BRANCH=pull/$BRANCH ; BRANCH=refs/pull/$BRANCH/head ;;
-          esac
-          ;;
-        [0-9]*) 
-          BRANCH=refs/pull/$1/head 
-          LOCAL_BRANCH=pull/$1 ;; 
-      esac ;
+      GITHUB_USER=cms-sw
+      BRANCH=$1
+      LOCAL_BRANCH=$1
+      # if the branch contains a colon, split the first part to be the github user
+      if [[ $BRANCH =~ ^.+:.+$ ]]; then
+        GITHUB_USER=`echo $BRANCH | cut -f1 -d:`
+        BRANCH=`echo $BRANCH | cut -f2 -d:`
+        LOCAL_BRANCH=$BRANCH
+      fi
+      # if the branch is a number, assume it to be a pull request
+      if [[ $BRANCH =~ ^[0-9]+$ ]]; then
+        PULL=$BRANCH
+        BRANCH=refs/pull/$PULL/head
+        LOCAL_BRANCH=pull/$PULL
+      fi
       shift
     ;;
   esac
