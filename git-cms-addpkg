@@ -27,23 +27,13 @@ usage () {
   exit $2
 }
 
-checkPkgFile () {
-  INPUT_FILE="$1"
-  CURRENT_BRANCH="$2"
-  for PKG_NAME in `cat $INPUT_FILE`; do
-    if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
-      [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
-      echo $PKG_NAME
-    fi
-  done
-  if [ "$HEADER" ]; then
-    exit 1
-  fi
-}
-
-checkPkgList () {
+checkPkgs () {
   PACKAGES="$1"
   CURRENT_BRANCH="$2"
+  FILE="$3"
+  if [ -n "$FILE" ]; then
+    PACKAGES=`cat $PACKAGES`
+  fi
   for PKG_NAME in $PACKAGES; do
     if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
       [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
@@ -227,9 +217,9 @@ CURRENT_BRANCH=`git symbolic-ref --short HEAD`
 # check if requested packages are present to be removed
 if [ "$COMMAND_NAME" == "cms-rmpkg" ]; then
   if [ "$INPUT_FILE" ]; then
-    checkPkgFile "$INPUT_FILE" "$CURRENT_BRANCH"
+    checkPkgs "$INPUT_FILE" "$CURRENT_BRANCH" file
   else
-    checkPkgList "$PACKAGES" "$CURRENT_BRANCH"
+    checkPkgs "$PACKAGES" "$CURRENT_BRANCH"
   fi
 fi
 
@@ -291,9 +281,9 @@ git read-tree -mu HEAD
 # check if requested packages were successfully added
 if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
   if [ "$INPUT_FILE" ]; then
-    checkPkgFile "$INPUT_FILE" "$CURRENT_BRANCH"
+    checkPkgs "$INPUT_FILE" "$CURRENT_BRANCH" file
   else
-    checkPkgList "$PACKAGES" "$CURRENT_BRANCH"
+    checkPkgs "$PACKAGES" "$CURRENT_BRANCH"
   fi
   exit 0
 fi
