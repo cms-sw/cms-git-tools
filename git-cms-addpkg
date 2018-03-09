@@ -116,7 +116,7 @@ checkPkgs () {
   CURRENT_BRANCH="$2"
   FILE="$3"
   if [ -n "$FILE" ]; then
-    PACKAGES=`cat $PACKAGES`
+    PACKAGES=$(< $PACKAGES)
   fi
   for PKG_NAME in $PACKAGES; do
     if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
