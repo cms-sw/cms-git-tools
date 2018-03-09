@@ -49,7 +49,7 @@ NORMAL='\033[0m'
 
 verbose () {
   if [ "X$VERBOSE" = X1 ]; then
-    echo "$@"
+    $ECHO "$@"
   fi
 }
 
