@@ -114,10 +114,6 @@ fi
 checkPkgs () {
   PACKAGES="$1"
   CURRENT_BRANCH="$2"
-  FILE="$3"
-  if [ -n "$FILE" ]; then
-    PACKAGES=$(< $PACKAGES)
-  fi
   for PKG_NAME in $PACKAGES; do
     if [ ! -d "$CMSSW_BASE/src/$PKG_NAME" ]; then
       [ "$HEADER" ] || { $ECHO "\nThese packages do not exist in branch $CURRENT_BRANCH"; HEADER=done; }
@@ -186,8 +182,10 @@ else
 fi
 
 if [ "$INPUT_FILE" ]; then
+  # make it into a standard package list
+  PACKAGES=`cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$'`
   # check the syntax of the input file
-  INVALID=`cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | grep -v -E '^/*\w+(/\w+)?/*$' || true`
+  INVALID=`echo $PACKAGES | tr " " "\n" | grep -v -E '^/*\w+(/\w+)?/*$' || true`
   if [ -n "$INVALID" ]; then
     $ECHO "Some lines of $INPUT_FILE are not in a valid format:"
     $ECHO "$RED$INVALID$NORMAL"
@@ -241,32 +239,18 @@ CURRENT_BRANCH=`git symbolic-ref --short HEAD`
 
 # check if requested packages are present to be removed
 if [ "$COMMAND_NAME" == "cms-rmpkg" ]; then
-  if [ "$INPUT_FILE" ]; then
-    checkPkgs "$INPUT_FILE" "$CURRENT_BRANCH" file
-  else
-    checkPkgs "$PACKAGES" "$CURRENT_BRANCH"
-  fi
+  checkPkgs "$PACKAGES" "$CURRENT_BRANCH"
 fi
 
 # create temporary sparse checkout file
 touch $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
 
 # add the requested package(s) to the temporary file
-if [ "$INPUT_FILE" ]; then
-  verbose "\n$ACTION packages"
-  verbose "`cat "$INPUT_FILE"`"
-
-  cat "$INPUT_FILE" | sed -e's|\s*#.*||' | grep -v '^\s*$' | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
-else
-  verbose "\n$ACTION packages"
-  for PKG_NAME in $PACKAGES; do
-    verbose $PKG_NAME
-  done
-
-  for PKG_NAME in $PACKAGES; do
-    echo $PKG_NAME | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
-  done
-fi
+verbose "\n$ACTION packages"
+for PKG_NAME in $PACKAGES; do
+  verbose $PKG_NAME
+  echo $PKG_NAME | sed -e "s|[/]*$|/|;s|^/*|${LEADING_SLASH}|" >> $CMSSW_BASE/src/.git/info/sparse-checkout-tmp
+done
 
 # add or remove from the real sparse checkout file
 if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
@@ -305,10 +289,6 @@ git read-tree -mu HEAD
 
 # check if requested packages were successfully added
 if [ "$COMMAND_NAME" == "cms-addpkg" ]; then
-  if [ "$INPUT_FILE" ]; then
-    checkPkgs "$INPUT_FILE" "$CURRENT_BRANCH" file
-  else
-    checkPkgs "$PACKAGES" "$CURRENT_BRANCH"
-  fi
+  checkPkgs "$PACKAGES" "$CURRENT_BRANCH"
   exit 0
 fi
