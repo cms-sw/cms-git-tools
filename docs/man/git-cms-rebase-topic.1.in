@@ -6,7 +6,7 @@ git-cms-rebase-topic - CMSSW helper to rebase a given branch or pull request.
 
 .SH SYNOPSIS
 
-.B git cms-checkout-topic [<github-user>:]{<branch>|<pull-request-id>}
+.B git cms-rebase-topic [<github-user>:]{<branch>|<pull-request-id>}
 
 .SH OPTIONS
 
