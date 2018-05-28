@@ -135,12 +135,12 @@ if ($ENV{CMSSW_GIT_HASH}) {
 }
 my %upackages=();
 
-foreach my $diff (`git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r $reltag | grep -v .gitignore | sed -e 's/[ \t]\+/ /'`)
+foreach my $diff (`git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r $reltag | grep -v .gitignore | sed -e 's/[ \t]\+/ /'; git diff --diff-filter R --name-status -r $reltag`)
 {
   chomp $diff;
-  if ($diff=~/^.\s+([^\/]+\/[^\/]+)\/[^\s]+$/o)
+  if ($diff=~/^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$/o)
   {
-    my $pack=$1;
+    my $pack=$2;
     if (!exists $upackages{$pack})
     {
       $upackages{$pack}=[];
@@ -157,6 +157,7 @@ foreach my $package (@packages) {
     my %msgs=("-" => {}, "x" => {});
     foreach my $diff (@{$upackages{$package}}) {
         my $del = 0;
+        if ($diff =~/^(R[0-9]*)(\s+[^\s]+)\s+/o){ $diff = "D $2";}
         if ( ($diff =~/^(M)/o) || ($diff =~/^(U)/o) || ($diff =~/^(D)/o) ) {
             if ($1 eq "D"){$del =1;}
             my @sp2=split(' ', $diff);
