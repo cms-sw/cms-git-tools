@@ -37,3 +37,9 @@ read the list of packages to be checked out from FILE
 -q, --quiet, -z
 
 do not print out progress
+
+.TP 5
+
+-o, --force
+
+force removal of packages even if modified or containing untracked files
