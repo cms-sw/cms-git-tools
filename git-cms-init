@@ -333,10 +333,6 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
   # update all branches and tags from the upstream repository
   git fetch official-cmssw --tags 2>&${verbose}
 
-  # create a new branch, pointing to the commit corresponding to $CMSSW_TAG, and switch to it
-  git branch from-$CMSSW_TAG $CMSSW_TAG
-  git symbolic-ref HEAD refs/heads/from-$CMSSW_TAG
-
   # setup sparse checkout
   git config core.sparsecheckout true
   {
@@ -345,6 +341,9 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
     echo "${LEADING_SLASH}.clang-format"
   } > $CMSSW_BASE/src/.git/info/sparse-checkout
   git read-tree -mu HEAD
+
+  # create a new branch, pointing to the commit corresponding to $CMSSW_TAG, and switch to it
+  git checkout $CMSSW_TAG -b from-$CMSSW_TAG 2>&${verbose}
 else
   # update all branches and tags from the upstream repository
   git fetch official-cmssw --tags 2>&${verbose}
