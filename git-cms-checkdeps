@@ -269,15 +269,20 @@ sub poisonIncludes() {
     use File::Basename qw(dirname);
     my $poison="${topdir}/${poisondir}";
     if (-d $poison){rmtree($poison);}
+    my $poisondata = "$poison/.data";
+    mkpath($poisondata);
     if (scalar(@$deletedFiles)>0) {print ">> Creating dummy files under $poison directory.\n";}
     foreach my $file (@$deletedFiles) {
         my $f="${poison}/${file}";
         my $dir=dirname($f);
         if (!-d $dir){mkpath($dir);}
-        my $ref;
-        if(!open($ref,">${f}")){die "ERROR: Can not open file for writing: $f\n";}
-        print $ref "#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n";
-        close($ref);
+        if ($file=~/\/data\//o){symlink("$poisondata","$f");}
+        else{
+          my $ref;
+          if(!open($ref,">${f}")){die "ERROR: Can not open file for writing: $f\n";}
+          print $ref "#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n";
+          close($ref);
+        }
         print "   $file\n";
     }
 }
