@@ -12,16 +12,19 @@ usage () {
   $ECHO "git cms-init [options] [release]"
   $ECHO
   $ECHO "Options:"
-  $ECHO "-h                 \tthis help message"
+  $ECHO "  -h                   \tthis help message"
   $ECHO
-  $ECHO "-d, --debug        \tenable debug output"
-  $ECHO "    --check        \trun additional checks on the status of the user repository"
-  $ECHO "    --https        \tuse https, rather than ssh to access your personal repository"
-  $ECHO "    --ssh          \tuse ssh, rather than https to access the official repository"
-  $ECHO "    --upstream-only\tconfigure only the official upstream repository, not the user repository"
-  $ECHO "-w, --enable-push  \tenable pushing to the official upstream repository"
-  $ECHO "-q, --quiet, -z    \tdo not print out progress"
-  $ECHO "-y, --yes          \tassume yes to all questions"
+  $ECHO "  -d, --debug          \tenable debug output"
+  $ECHO "      --check          \trun additional checks on the status of the user repository"
+  $ECHO "      --https          \tuse https, rather than ssh to access your personal repository"
+  $ECHO "      --ssh            \tuse ssh, rather than https to access the official repository"
+  $ECHO "      --upstream-only  \tconfigure only the official upstream repository, not the user repository"
+  $ECHO "  -w, --enable-push    \tenable pushing to the official upstream repository"
+  $ECHO "  -x, --extra NAME     \tconfigure an additional repository at https://github.com/NAME/cmssw with pushing disabled"
+  $ECHO "  -X, --extra-push NAME\tconfigure an additional repository at https://github.com/NAME/cmssw with pushing enabled"
+  $ECHO "  -q, --quiet, -z      \tdo not print out progress"
+  $ECHO "  -y, --yes            \tassume yes to all questions"
+
   exit $1
 }
 
@@ -33,6 +36,8 @@ DEBUG=false
 VERBOSE=true
 UPSTREAM_ONLY=false
 UPSTREAM_PUSH=false
+EXTRAS=
+EXTRAS_PUSH=
 OAUTH_TOKEN=869cfb0477e0cae72fb233be5e1f02bd97905bad
 PROXY=`git config https.proxy` && PROXY="-x $PROXY"
 
@@ -73,10 +78,18 @@ while [ "$#" != 0 ]; do
       shift; UPSTREAM_PUSH=true ;;
     --upstream-only )
       shift; UPSTREAM_ONLY=true ;;
+    -x | --extra )
+      [ "$2" ] || { $ECHO "git cms-init: missing argument to option $1"; $ECHO; usage 1; }
+      EXTRAS="$EXTRAS $2"
+      shift 2 ;;
+    -X | --extra-push )
+      [ "$2" ] || { $ECHO "git cms-init: missing argument to option $1"; $ECHO; usage 1; }
+      EXTRAS_PUSH="$EXTRAS_PUSH $2"
+      shift 2 ;;
     -*)
       $ECHO "git cms-init: unknown option $1"; $ECHO; usage 1 ;;
     *)
-      if [ "X$CMSSW_TAG" = X ]; then
+      if ! [ "$CMSSW_TAG" ]; then
         CMSSW_TAG=$1
       else
         $ECHO "git cms-init: unexpected argument $1"
@@ -341,6 +354,32 @@ if [ ! -d "$CMSSW_BASE/src/.git" ]; then
     echo "${LEADING_SLASH}.clang-format"
   } > $CMSSW_BASE/src/.git/info/sparse-checkout
   git read-tree -mu HEAD
+
+  # set up extra read-only repositories
+  for EXTRA in $EXTRAS; do
+    if [ "$PROTOCOL" = "ssh" ]; then
+      git remote add $EXTRA git@github.com:$EXTRA/cmssw.git
+    elif [ "$PROTOCOL" = "https" ]; then
+      git remote add $EXTRA https://github.com/$EXTRA/cmssw.git
+    elif [ "$PROTOCOL" = "mixed" ]; then
+      git remote add $EXTRA https://github.com/$EXTRA/cmssw.git
+    fi
+    git remote set-url --push $EXTRA disabled
+    git fetch $EXTRA
+  done
+
+  # set up extra read-write repositories
+  for EXTRA in $EXTRAS_PUSH; do
+    if [ "$PROTOCOL" = "ssh" ]; then
+      git remote add $EXTRA git@github.com:$EXTRA/cmssw.git
+    elif [ "$PROTOCOL" = "https" ]; then
+      git remote add $EXTRA https://github.com/$EXTRA/cmssw.git
+    elif [ "$PROTOCOL" = "mixed" ]; then
+      git remote add $EXTRA https://github.com/$EXTRA/cmssw.git
+      git remote set-url --push $EXTRA git@github.com:$EXTRA/cmssw.git
+    fi
+    git fetch $EXTRA
+  done
 
   # create a new branch, pointing to the commit corresponding to $CMSSW_TAG, and switch to it
   git checkout $CMSSW_TAG -b from-$CMSSW_TAG 2>&${verbose}
