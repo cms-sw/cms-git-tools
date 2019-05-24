@@ -6,7 +6,7 @@ usage: git cms-remote add [--ssh|--https] [-w|--enable-push] USER
 
 Description:
   Adds a remote repository called USER pointing to https://github.com/USER/cmssw.git .
-  By default only fethcing from this remote is enabled, using the HTTPS protocol.
+  By default only fetching from this remote is enabled, using the HTTPS protocol.
   The default behaviour is to immediately fetch the new remote repository; this can be
   disabled with the '--no-fetch' option.
   Pushing can be enabled with the '-w' or '--enable-push' option; the default is 
@@ -25,7 +25,14 @@ Options:
   exit $1
 }
 
-PROTOCOL=mixed
+# get default protocol from git config
+PROTOCOL=$(git config --get cms.protocol)
+HAS_PROTOCOL=$?
+# fallback to default
+if [ "$HAS_PROTOCOL" -ne 0 ]; then
+  PROTOCOL=mixed
+fi
+
 READONLY=true
 FETCH=true
 COMMAND=

@@ -28,10 +28,17 @@ usage () {
   exit $1
 }
 
+# get default protocol from git config
+PROTOCOL=$(git config --get cms.protocol)
+HAS_PROTOCOL=$?
+# fallback to default
+if [ "$HAS_PROTOCOL" -ne 0 ]; then
+  PROTOCOL=mixed
+fi
+
 # configuration
 CHECK=
 CUSTOM_REMOTE=false
-PROTOCOL=mixed
 DEBUG=false
 VERBOSE=true
 UPSTREAM_ONLY=false
