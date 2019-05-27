@@ -48,6 +48,9 @@ HAS_PROTOCOL=$?
 # fallback to default (ignore "mixed")
 if [ "$HAS_PROTOCOL" -ne 0 ] || [ "$PROTOCOL" = "mixed" ]; then
   PROTOCOL=https
+elif [ "$PROTOCOL" != "https" ] && [ "$PROTOCOL" != "ssh" ] && [ "$PROTOCOL" != "mixed" ]; then
+  $ECHO "Unsupported value $PROTOCOL in cms.protocol (choose https, ssh, mixed)"
+  exit 1
 fi
 
 DEBUG=0
