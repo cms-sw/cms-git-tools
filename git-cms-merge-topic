@@ -42,10 +42,20 @@ usage() {
 RED='\033[31m'
 NORMAL='\033[0m'
 
+# get default protocol from git config
+PROTOCOL=$(git config --get cms.protocol)
+HAS_PROTOCOL=$?
+# fallback to default (ignore "mixed")
+if [ "$HAS_PROTOCOL" -ne 0 ] || [ "$PROTOCOL" = "mixed" ]; then
+  PROTOCOL=https
+elif [ "$PROTOCOL" != "https" ] && [ "$PROTOCOL" != "ssh" ] && [ "$PROTOCOL" != "mixed" ]; then
+  $ECHO "Unsupported value $PROTOCOL in cms.protocol (choose https, ssh, mixed)"
+  exit 1
+fi
+
 DEBUG=0
 VERBOSE=1
 INITOPTIONS=""                      # options passed to git cms-init
-PROTOCOL=https
 BACKUP=true
 BACKUP_NAME=_backup
 

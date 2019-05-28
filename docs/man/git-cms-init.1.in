@@ -1,0 +1,87 @@
+.TH GIT_CMS_INIT 1 LOCAL
+
+.SH NAME
+
+git-cms-init - CMSSW helper to initialize git repository with remotes in working area.
+
+.SH SYNOPSIS
+
+.B git cms-init [options] [release] 
+
+.SH DESCRIPTION
+
+This command is equivalent to 'git init' or 'git clone', but
+customized for the CMSSW use case.
+It initializes the git repository in the src/ folder of the CMSSW working
+area, with remotes configured: official-cmssw (upstream) and my-cmssw
+(origin, your personal fork).
+By default, the current release specified by the environment variable
+$CMSSW_BASE is used. An alternative release can be specified as the last argument.
+This command may be called by other commands such as cms-addpkg.
+
+To use a specified protocol (https, ssh, or mixed (default))
+always rather than specifying the flag each time, the git config can be used:
+
+git config --global cms.protocol ssh
+
+.SH OPTIONS
+
+.TP 5
+
+-d, --debug
+
+enable debug output
+
+.TP 5
+
+--check
+
+run additional checks on the status of the user repository
+
+.TP 5
+
+--https
+
+use https, rather than ssh to access your personal repository
+
+.TP 5
+
+--ssh
+
+use ssh, rather than https to access the official repository
+
+.TP 5
+
+--upstream-only
+
+configure only the official upstream repository, not the user repository
+
+.TP 5
+
+-w, --enable-push
+
+enable pushing to the official upstream repository
+
+.TP 5
+
+-x, --extra NAME
+
+configure an additional repository at https://github.com/NAME/cmssw with pushing disabled
+
+.TP 5
+
+-X, --extra-push NAME
+
+configure an additional repository at https://github.com/NAME/cmssw with pushing enabled
+
+.TP 5  
+
+-q, --quiet, -z
+
+do not print out progress
+
+.TP 5
+
+-y, --yes
+
+assume yes to all questions
