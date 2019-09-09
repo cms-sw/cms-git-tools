@@ -45,7 +45,7 @@ UPSTREAM_PUSH=false
 EXTRAS=
 EXTRAS_PUSH=
 OAUTH_TOKEN=869cfb0477e0cae72fb233be5e1f02bd97905bad
-PROXY=`git config https.proxy` && PROXY="-x $PROXY"
+PROXY=`git config http.proxy` && PROXY="-x $PROXY"
 
 # colors and formatting
 RED='\033[31m'
