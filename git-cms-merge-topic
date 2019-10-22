@@ -30,7 +30,7 @@ usage() {
   $ECHO "-o, --old-base       \tspecify old base for merge-base or rebase (not used by default)"
   # only for rebase-topic
   if [ "$COMMAND_NAME" = "cms-rebase-topic" ]; then
-    $ECHO "-n, --new-base       \tspecify new base for rebase (default = "'$CMSSW_VERSION'")"
+    $ECHO "-n, --new-base       \tspecify new base for rebase (default = current branch)"
   fi
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
   $ECHO "-A, --all-deps     \tperform checkdeps for all dependencies (header, python, BuildFile)"
@@ -198,11 +198,11 @@ if [ -z "$CMSSW_BASE" ]; then
   echo "CMSSW environment not setup, please run 'cmsenv' before 'git $COMMAND_NAME'."
   exit 1
 fi
-if [ -z "$NEW_BASE" ]; then
-  NEW_BASE=$CMSSW_VERSION
-fi
 if ! [ -d $CMSSW_BASE/src/.git ]; then
   git cms-init $INITOPTIONS
+fi
+if [ -z "$NEW_BASE" ]; then
+  NEW_BASE=$(git rev-parse --abbrev-ref HEAD)
 fi
 
 cd $CMSSW_BASE/src
