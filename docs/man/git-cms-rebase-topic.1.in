@@ -62,7 +62,7 @@ Specify old base for merge-base or rebase (not used by default).
 
 -n, --new-base
 
-Specify new base for merge-base or rebase (default = $CMSSW_VERSION).
+Specify new base for merge-base or rebase (default = current branch).
 
 .TP 5
 
