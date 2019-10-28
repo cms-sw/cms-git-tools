@@ -201,11 +201,11 @@ fi
 if ! [ -d $CMSSW_BASE/src/.git ]; then
   git cms-init $INITOPTIONS
 fi
+
+cd $CMSSW_BASE/src
 if [ -z "$NEW_BASE" ]; then
   NEW_BASE=$(git rev-parse --abbrev-ref HEAD)
 fi
-
-cd $CMSSW_BASE/src
 git fetch . +HEAD:$TEMP_BRANCH || { echo "You are on a failed $TEMP_BRANCH_WORD branch. Do \"git branch\" and checkout the one you were on."; exit 1; }
 
 if [ "$(git status --porcelain --untracked=no | grep '^[ACDMRU]')" ]; then
