@@ -1,0 +1,61 @@
+#! /bin/bash
+
+function usage() {
+  cat <<@EOF
+Usage: git cms-fetch-pr <pull request> [<local branch>]
+
+Description:
+  Fetch a pull request from https://github.com/cms-sw/cmssw.git into the local branch 
+  pull/<pull request> , or <local branch> if specified.
+@EOF
+  exit $1
+}
+
+PULL=
+BRANCH=
+
+while [ "$#" != 0 ]; do
+  case "$1" in
+    -*)
+      echo Unknown option $1
+      usage 1
+      ;;
+    *)
+      if [ "$COMMAND" == "" ]; then
+        PULL=$1
+      elif [ "$BRANCH" == "" ]; then
+        BRANCH=$1
+      else
+        echo Unexpected argument $1
+        usage 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+# initialize the local repository
+if [ -z "$CMSSW_BASE" ]; then
+  echo "CMSSW environment not setup, please run 'cmsenv' before 'git cms-fetch-pr'."
+  exit 1
+fi
+if ! [ -d "$CMSSW_BASE"/src/.git ]; then
+  cd $CMSSW_BASE/src
+  git cms-init --upstream-only
+fi
+
+if [[ $PULL =~ .*:.* ]]; then
+  USER=$(echo "$PULL" | cut -d: -f1)
+  PULL=$(echo "$PULL" | cut -d: -f2)
+else
+  USER="cms-sw"
+fi
+
+REMOTE="git@github.com:$USER/cmssw.git"
+
+if [ -z "$BRANCH"]; then
+    BRANCH="pull/$PULL"
+fi
+
+cd $CMSSW_BASE/src
+git fetch -n $REMOTE refs/pull/$PULL/head:$BRANCH
