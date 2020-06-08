@@ -98,9 +98,9 @@ else:
 
 upackages = {}
 
-bash_cmd = "git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r %s | grep -v .gitignore | sed -e 's/[ \t]\+/ /'; git diff --diff-filter R --name-status -r %s" % reltag
+cmd = "git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r %s | grep -v .gitignore | sed -e 's/[ \t]\+/ /'; git diff --diff-filter R --name-status -r %s" % reltag
 
-process = subprocess.Popen(bash_cmd.split(), stdout=subprocess.PIPE)
+process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 while True:
   diff = process.stdout.readline()
   match = re.search(r'^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$', diff)
@@ -152,19 +152,16 @@ for file in changedFiles:
   for dep in vals[file]:
     sp = dep.split("/")
     recompile = "%s/%s" % (sp[0], sp[1])
-    # if grep
+    if not filter(lambda x:recompile in x, packages):
+      scope="header"
+      if re.search(r'\.py$', file): scope = "python"
+      elif re.search(r'\/BuildFile(\.xml|)$', file): scope = "buildfile"
+      recompileList[recompile][scope] = file
 
-
-    bash_command = ""
-import subprocess
-process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-output, error = process.communicate()
-
-print(output)
 
 if big_bf != "":
-  bash_command = "git diff -r %s -- %s | sed -e 's/[ \t]\+/ /' | grep '^+' | grep -i '< *use  *name *='" % (reltag, big_bf)
-  process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+  cmd = "git diff -r %s -- %s | sed -e 's/[ \t]\+/ /' | grep '^+' | grep -i '< *use  *name *='" % (reltag, big_bf)
+  process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
   while True:
     diff = process.stdout.readline()
     diff = re.sub(r'^[+]', r'', diff)
@@ -175,8 +172,8 @@ if big_bf != "":
           recompileList[match.group(1)][biglib] = "BigProducts"
             
 
-t = sorted(recompileList)
-len = len(recompileList)
+t = sorted(recompileList.keys())
+len = len(t)
 if checkout == 0: print("Packages to check out and compile: %s" % len)
 else: print("Checking out these packages: %s" %len)
 
@@ -184,39 +181,30 @@ else: print("Checking out these packages: %s" %len)
 exitcode = 0
 if len > 0:
   for pk in t:
-    if printFilenames == 1:
-      print("%s ("",join(", ",sort values %{$recompileList{$pk}}),"")
-    else
-      print(%s.)
+    if printFileNames == 1:
+      print "pk %s" % ", ".join(sorted(recompileList.values()))
+    else:
+      print "pk %s" % ", ".join(sorted(recompileList.keys()))
 
-bash_command = "git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r %s | grep -v .gitignore | sed -e 's/[ \t]\+/ /'; git diff --diff-filter R --name-status -r %s"
+if checkout == 1:
+  os.chdir(localtop)
+  #################################
+  fh, fname = tempfile(localtop .'/tmp/checkdepsXXXXX')
+  for pk in t: print pk
+  ###################################
+  cmd = "cd %s/src; git cms-addpkg -f %s -q" % (localtop, fname)
+  process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+  stdout, stderr = process.communicate()
+  exitcode += process.returncode
 
-process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-while True:
-  diff = process.stdout.readline()
-  match = re.search(r'^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$', diff)
-  if match :
-    pack = match.group(2)
-    if "pack" not in upackages: 
-      upackages["pack"] = []
-      if not pack: print(">> Package removed $pack")
-    upackages[pack].append(diff)
-  if not diff:
-   break
-
-bash_command = ""
-import subprocess
-process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-output, error = process.communicate()
-
-print(output)
 
 if exitcode > 0: exitcode = 1
 sys.exit(exitcode)
 
 def readDependencyInfo(file, cache):
-  with open (f, "w") as file: file.write("#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
-    except Exception as e: print(e)
+  try: 
+    with open (f, "w") as file: file.write("#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
+  except Exception as e: print(e)
   print(file)
 
 def poisonIncludes(deletedFiles, topdir):
