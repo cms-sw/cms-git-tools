@@ -1,15 +1,11 @@
-#!/usr/bin/env perl
-#
-# $Id: git-checkdeps,v 1.8 2013/03/25 13:26:43 eulisse Exp $
-#
-# Created by: David Lange
-#             LLNL
-#             12 September 207
-#
-use strict;
-use warnings;
-use Getopt::Long;
-use Cwd;
+#!/usr/bin/env python
+
+import sys, re, json, os
+from os import environ, popen, path
+from os.path import dirname, realpath
+from optparse import OptionParser
+import subprocess
+import re
 
 #Idea: diff checked out packages.
 #     looking for changed headers
@@ -18,271 +14,228 @@ use Cwd;
 
 #if any argument, print help and exit 
 
-my $poisondir="poison";
-my $checkout=0;
-my $checkpython=0;
-my $checkheader=0;
-my $checkbuildfile=0;
-my $printFileNames=0;
-my $poison_includes=undef;
-my $poison_only=0;
-my $jobs=4;
+poisondir = "poison"
+checkout = 0
+checkpython = 0
+checkheader = 0
+checkbuildfile = 0
+printFileNames = 0
+poison_includes = None
+poison_only = 0
+jobs = 4
  
-while (my $arg=shift) {
-    if ( $arg eq "-a" ) {
-	$checkout=1;
-	if (!defined $poison_includes) {$poison_includes=1;}
-    }
-    elsif ( $arg eq "-p" ) {
-	$checkpython=1;
-    }
-    elsif ( $arg eq "-h" ) {
-	$checkheader=1;
-    }
-    elsif ( $arg eq "-b" ) {
-	$checkbuildfile=1;
-    }
-    elsif ( $arg eq "-f" ) {
-	$printFileNames=1;
-    }
-    elsif ( $arg eq "-d" ) {
-	$poison_includes=0;
-    }
-    elsif ( $arg eq "-D" ) {
-	$poison_only=1;
-    }
-    elsif ( $arg eq "-j" ) {
-        $arg = shift;
-	if ($arg!~/^\d+$/){die "Error: Invalid value '$arg' use with -j command-line argument.\n";}
-	$jobs=int($arg);
-        if ($jobs<1){$jobs=1;}
-    }
-    elsif ( $arg eq "-A" ) {
-        $checkpython=1;
-        $checkheader=1;
-        $checkbuildfile=1;
-    }
-    else{
-	print "checkdeps:\n",
-              "   Utility to check your local development area against the CMSSW release.\n",
-              "   Any modified header files or python modules are found and the package\n",
-              "   dependencies of these files will be returned. addpkg-ing these packages\n",
-              "   and rebuilding them should provide a full and consistent build.\n",
-              "\nUsage: \n",
-              "   -p look for python modules and their dependencies  (ON by default)\n",
-              "   -h look for header files and their dependencies    (ON by default)\n",
-              "   -b look for BuildFile files and their dependencies (OFF by default)\n",
-              "   -f print name of changed file name instead of type of dependency (OFF by default)\n",
-              "   -a will add/checkout the packages into your development area\n",
-              "   -A will check all dependencies i.e. header (-h), python(-p) and BuildFile(-b)\n",
-              "   -d do not create dummy copy of deleted files in ${poisondir} directory. Dummy copies\n",
-              "      are useful to find out if deleted headers files are included by other source files.\n",
-              "   -D only dummy copy of deleted files in ${poisondir} directory created.\n",
-              "      NOTE: all other dependency check/add command-line args are ignored.\n",
-              "   -j <N> Run N threads to checkout packages. Default is ${jobs}\n",
-              "   -q will pass -Q option to cvs to make it quiet\n\n";
-	exit;
-    }
-}
 
-if ($poison_only) {
-    $checkpython=0;
-    $checkheader=0;
-    $checkbuildfile=0;
-    $checkout=0;
-    $poison_includes=1;
-}
-elsif ((!$checkpython) && (!$checkheader) && (!$checkbuildfile)) {
-    $checkpython=1;
-    $checkheader=1;
-}
 
-if(!defined $poison_includes) { $poison_includes = 0; }
+help_text = "\n\
+    Utility to check your local development area against the CMSSW release.\n\
+    Any modified header files or python modules are found and the package \n\
+    dependencies of these files will be returned. addpkg-ing these packages\n\
+    and rebuilding them should provide a full and consistent build."
 
-my $localtop=$ENV{CMSSW_BASE};
-die "ERROR: Could not find developer area base path. Please run \"cmsenv\" in a developer area.\n" if ($localtop eq "");
+parser = OptionParser(usage=help_text)
+parser.add_option("-a", dest="checkout", default=1, help = "will add/checkout the packages into your development area")
+parser.add_option("-x", dest="checkout", default=1, help = "look for header files and their dependencies (ON by default)")
+parser.add_option("-p", dest="checkpython", default=1, help = "look for python modules and their dependencies  (ON by default)")
+parser.add_option("-b", dest="checkbuildfile", default=1, help = "look for BuildFile files and their dependencies (OFF by default)")
+parser.add_option("-f", dest="printFileNames", default=1, help = "print name of changed file name instead of type of dependency (OFF by default)")
+parser.add_option("-d", dest="poison_includes", default=1, help = "do not create dummy copy of deleted files in ${poisondir} directory. Dummy copies\
+ are useful to find out if deleted headers files are included by other source files.")
+parser.add_option("-D", dest="poison_only", default=1, help = "only dummy copy of deleted files in ${poisondir} directory created.\
+ NOTE: all other dependency check/add command-line args are ignored.")
+parser.add_option("-j", dest="checkout", default=1, help = "<N> Run N threads to checkout packages. Default is ${jobs}")
+parser.add_option("-A", dest="checkout", default=1, help = "will check all dependencies i.e. header (-h), python(-p) and BuildFile(-b)")
 
-my $releasetop=$ENV{CMSSW_RELEASE_BASE};
-die "ERROR: Could not find release base path. Please run this script from a developer area.\n" if ($releasetop eq "");
+(options, args) = parser.parse_args()
 
-my %vals=();
-if ($checkheader){
-    my $depfile = "${releasetop}/etc/dependencies/usedby.out.gz";
-    die "ERROR: This release appears not to support the functionality of this script (170pre4 and higher). Sorry\n" if (!-e "$depfile");
-    &readDependencyInfo("$depfile",\%vals);
-}
+# print options.checkout
 
-if ($checkpython) {
-    my $depfile = "${releasetop}/etc/dependencies/pyusedby.out.gz";
-    &readDependencyInfo("$depfile",\%vals) if (-e "$depfile");
-}
+if poison_only:
+  checkpython = 0
+  checkheader = 0
+  checkbuildfile = 0
+  checkout = 0
+  poison_includes = 1
+elif (not checkpython) & (not checkheader) & (not checkbuildfile):
+  checkpython = 1
+  checkheader = 1
+  
+if poison_includes is None: poison_includes = 0
 
-if ($checkbuildfile)
-{
-    my $depfile = "${releasetop}/etc/dependencies/bfusedby.out.gz";
-    &readDependencyInfo("$depfile",\%vals) if (-e "$depfile");
-}
+try: localtop = environ["CMSSW_BASE"]
+except KeyError: print("ERROR: Could not find developer area base path. Please run \"cmsenv\" in a developer area.")
 
-chdir("${localtop}/src");
+try: releasetop = environ["CMSSW_RELEASE_BASE"]
+except KeyError: print("ERROR: Could not find release base path. Please run this script from a developer area.")
 
-my @changedFiles;
-my @deletedFiles;
-my $reltag;
-if ($ENV{CMSSW_GIT_HASH}) {
-    $reltag=$ENV{CMSSW_GIT_HASH};
-} else {
-    $reltag=$ENV{CMSSW_VERSION};
-}
-my %upackages=();
+vals = {}
 
-foreach my $diff (`git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r $reltag | grep -v .gitignore | sed -e 's/[ \t]\+/ /'; git diff --diff-filter R --name-status -r $reltag`)
-{
-  chomp $diff;
-  if ($diff=~/^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$/o)
-  {
-    my $pack=$2;
-    if (!exists $upackages{$pack})
-    {
-      $upackages{$pack}=[];
-      if (!-e $pack){print ">> Package removed $pack\n";}
-    }
-    push @{$upackages{$pack}},$diff;
-  }
-}
-my @packages=sort keys %upackages;
+if checkheader:
+  depfile = "%s/etc/dependencies/usedby.out.gz" % releasetop
+  if path.isfile(depfile): readDependencyInfo(depfile, vals)
+  else: 
+    print("ERROR: This release appears not to support the functionality of this script (170pre4 and higher). Sorry")
+    sys.exit(1)
 
-foreach my $package (@packages) {
-    next if ($package =~/^UserCode.*/o);    
-    print ">> Checking $package $reltag\n";
-    my %msgs=("-" => {}, "x" => {});
-    foreach my $diff (@{$upackages{$package}}) {
-        my $del = 0;
-        if ($diff =~/^(R[0-9]*)(\s+[^\s]+)\s+/o){ $diff = "D $2";}
-        if ( ($diff =~/^(M)/o) || ($diff =~/^(U)/o) || ($diff =~/^(D)/o) ) {
-            if ($1 eq "D"){$del =1;}
-            my @sp2=split(' ', $diff);
-            $diff = $sp2[1];
-        }
-        else {$diff = "";}
-        if ($diff) {$msgs{"x"}{$diff}=1;}
-        if ($del)  {$msgs{"-"}{$diff}=1;}
-    }
-    my @files=sort keys %{$msgs{"-"}};
-    push(@deletedFiles,@files);
-    push(@changedFiles,@files);
-    foreach my $diff (@files){print "   - $diff\n"; delete $msgs{"x"}{$diff};}
-    @files=sort keys %{$msgs{"x"}};
-    push(@changedFiles,@files);
-    foreach my $diff (@files){print "   x $diff\n";}
-}
+if checkpython:
+  depfile = "%s/etc/dependencies/pyusedby.out.gz" % releasetop
+  if path.isfile(depfile): readDependencyInfo(depfile, vals)
+  sys.exit(1)
 
-&poisonIncludes(\@deletedFiles,$localtop) if ($poison_includes);
-if ($poison_only) {exit 0;}
+if checkbuildfile:
+  depfile = "%s/etc/dependencies/bfusedby.out.gz" % releasetop
+  if path.isfile(depfile): readDependencyInfo(depfile, vals)
+  sys.exit(1)
 
-my %recompileList;
-my $big_bf="";
-foreach my $file (@changedFiles) {
-    if ($file=~/^BigProducts\/[^\/]+\/BuildFile\.xml$/o){$big_bf="${big_bf} ${file}";}
-    next if (!(exists $vals{$file}));
-    foreach my $dep (@{$vals{$file}}) {
-        my @sp=split('/',$dep);
-        my $recompile="$sp[0]/$sp[1]";
-        if (!(grep {$_ eq $recompile} @packages)) {
-            my $scope="header";
-            if ($file=~/\.py$/o){$scope="python";}
-            elsif($file=~/\/BuildFile(\.xml|)$/o){$scope="buildfile";}
-            $recompileList{$recompile}{$scope}=$file;
-        }
-    }
-}
+os.chdir("%/src" % localtop)
 
-if ($big_bf ne "")
-{
-  foreach my $diff (`git diff -r $reltag -- $big_bf | sed -e 's/[ \t]\+/ /' | grep '^+' | grep -i '< *use  *name *='`)
-  {
-    chomp $diff;
-    $diff=~s/^[+]//o;
-    foreach my $p (split(">",$diff))
-    {
-      if ($p=~/^\s*<\s*use\s+name\s*=\s*["]([^"]+)["]\s*/)
-      {
-	if (-e "${releasetop}/src/${1}"){$recompileList{$1}{biglib}="BigProducts";}
-      }
-    }
-  }
-}
+changedFiles = []
+deletedFiles = []
+reltag = None
+if os.environ["CMSSW_GIT_HASH"]:
+  reltag = os.environ["CMSSW_GIT_HASH"]
+else:
+  reltag = os.environ["CMSSW_VERSION"]
 
-my @t=sort(keys %recompileList);
-my $len=scalar(@t);
-if ( $checkout == 0 ) {
-    print "Packages to check out and compile: $len\n";
-}
-else{
-    print "Checking out these packages: $len\n";
-}
+upackages = {}
 
-my $exitcode=0;
-if ( $len > 0 ) {
-    foreach my $pk (@t) {
-	if ( $printFileNames == 1 ) {
-	    print "$pk (",join(", ",sort values %{$recompileList{$pk}}),")\n";
-	} else {
-	    print "$pk (",join(", ",sort keys %{$recompileList{$pk}}),")\n";
-	}
-    }
-    if ( $checkout == 1 ) {
-        chdir ($localtop);
-        use File::Temp qw(tempfile);
-        my ($fh,$fname) = tempfile($ENV{CMSSW_BASE} . '/tmp/checkdepsXXXXX', UNLINK => 1);;
-        foreach my $pk (@t) {
-            print $fh "$pk/\n";
-        }
-        system("cd $ENV{CMSSW_BASE}/src; git cms-addpkg -f $fname -q");
-        $exitcode+=$?;
-        close($fh);
-    }
-}
-if ($exitcode>0){$exitcode=1;}
-exit($exitcode);
+bash_cmd = "git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r %s | grep -v .gitignore | sed -e 's/[ \t]\+/ /'; git diff --diff-filter R --name-status -r %s" % reltag
 
-sub readDependencyInfo()
-{
-  my $file=shift;
-  my $cache=shift;
-  my $ref;
-  open($ref,"gunzip -c $file |") || die "Can not open file for reading: $file\n";
-  while  (my $line=<$ref>) { 
-    chomp($line);
-    my ($file1,$rest)=split(' ',$line,2);
-    if ($file1 ne "")
-    {
-      if (!exists $vals{$file1}){$vals{$file1}=[];}
-      push @{$vals{$file1}},split(' ',$rest);
-    }
-  }
-  close($ref);
-}
+process = subprocess.Popen(bash_cmd.split(), stdout=subprocess.PIPE)
+while True:
+  diff = process.stdout.readline()
+  match = re.search(r'^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$', diff)
+  if match :
+    pack = match.group(2)
+    if "pack" not in upackages: 
+      upackages["pack"] = []
+      if not pack: print(">> Package removed $pack")
+    upackages[pack].append(diff)
+  if not diff:
+   break
 
-sub poisonIncludes() {
-    my ($deletedFiles,$topdir)=@_;
-    use File::Path qw (mkpath rmtree);
-    use File::Basename qw(dirname);
-    my $poison="${topdir}/${poisondir}";
-    if (-d $poison){rmtree($poison);}
-    my $poisondata = "$poison/.data";
-    mkpath($poisondata);
-    if (scalar(@$deletedFiles)>0) {print ">> Creating dummy files under $poison directory.\n";}
-    foreach my $file (@$deletedFiles) {
-        my $f="${poison}/${file}";
-        my $dir=dirname($f);
-        if (!-d $dir){mkpath($dir);}
-        if ($file=~/\/data\//o){symlink("$poisondata","$f");}
-        else{
-          my $ref;
-          if(!open($ref,">${f}")){die "ERROR: Can not open file for writing: $f\n";}
-          print $ref "#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n";
-          close($ref);
-        }
-        print "   $file\n";
-    }
-}
+packages = sorted(upackages)
+
+for package in packages:
+  if re.search(r'^UserCode.*', package): continue
+  print ">> Checking %s %s" % (package, reltag)"
+  msgs = {"-" : {}, "x": {}}
+  for diff in upackages[package]:
+    _del = 0
+    match  = re.search(r'^(R[0-9]*)(\s+[^\s]+)\s+', diff)
+    if match:
+      diff = "D %s" % match.group(2)
+      if (re.search(r'^(M)', diff) or re.search(r'^(U)', diff) or re.search(r'^(D)', diff)):
+        if match.group(1) == "D": _del = 1
+        sp2 = diff.split(' ')
+        diff = sp2[1]
+      else: diff = ""
+      if diff: msgs["x"][diff] = 1
+      if _del = msgs["-"][diff] = 1
+  files = sorted(msgs["-"])
+  deletedFiles.append(files)
+  changedFiles.append(files)
+  for diff in files:
+    print("   - $diff")
+    del msgs["x"][diff]
+  files = sorted(msgs["x"])
+  changedFiles.append(files)
+  for diff in files:
+    print("   x $diff")
+
+
+recompileList = {}
+big_bf = ""
+for file in changedFiles:
+  if re.search(r'^BigProducts\/[^\/]+\/BuildFile\.xml$', file):
+    big_bf = "%s %s" % (big_bf, file)
+  if file not in vals: continue
+  for dep in vals[file]:
+    sp = dep.split("/")
+    recompile = "%s/%s" % (sp[0], sp[1])
+    # if grep
+
+
+    bash_command = ""
+import subprocess
+process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+output, error = process.communicate()
+
+print(output)
+
+if big_bf != "":
+  bash_command = "git diff -r %s -- %s | sed -e 's/[ \t]\+/ /' | grep '^+' | grep -i '< *use  *name *='" % (reltag, big_bf)
+  process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+  while True:
+    diff = process.stdout.readline()
+    diff = re.sub(r'^[+]', r'', diff)
+    for p in diff.split(">"):
+      match = re.search(r'^\s*<\s*use\s+name\s*=\s*["]([^"]+)["]\s*', p)
+      if match:
+        if os.path.exists("%s/src/%s" % (releasetop, match.group(1))):
+          recompileList[match.group(1)][biglib] = "BigProducts"
+            
+
+t = sorted(recompileList)
+len = len(recompileList)
+if checkout == 0: print("Packages to check out and compile: %s" % len)
+else: print("Checking out these packages: %s" %len)
+
+
+exitcode = 0
+if len > 0:
+  for pk in t:
+    if printFilenames == 1:
+      print("%s ("",join(", ",sort values %{$recompileList{$pk}}),"")
+    else
+      print(%s.)
+
+bash_command = "git diff -G '^([^\$]+\$|[^\$]*[\$][^\$]*\$|([^\$]*[\$])(\$|[^RAIDLNSH]|(R[^eC]|A[^u]|I[^d]|D[^a]|L[^o]|N[^a]|S[^o]|H[^e])|(Re[^v]|RC[^S]|Au[^t]|Id[^:]|Da[^t]|Lo[^g]|Na[^m]|So[^u]|He[^a])|(Rev[^i]|RCS[^f]|Aut[^h]|Dat[^e]|Log[^:]|Nam[^e]|Sou[^r]|Hea[^d])|(Revi[^s]|RCSf[^i]|Auth[^o]|Date[^:]|Name[^:]|Sour[^c]|Head[^e])|(Revis[^i]|RCSfi[^l]|Autho[^r]|Sourc[^e]|Heade[^r])|(Revisi[^o]|RCSfil[^e]|Author[^:]|Source[^:]|Header[^:])|(Revisio[^n]|RCSfile[^:])|(Revision[^:])))' --name-status -r %s | grep -v .gitignore | sed -e 's/[ \t]\+/ /'; git diff --diff-filter R --name-status -r %s"
+
+process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+while True:
+  diff = process.stdout.readline()
+  match = re.search(r'^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$', diff)
+  if match :
+    pack = match.group(2)
+    if "pack" not in upackages: 
+      upackages["pack"] = []
+      if not pack: print(">> Package removed $pack")
+    upackages[pack].append(diff)
+  if not diff:
+   break
+
+bash_command = ""
+import subprocess
+process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+output, error = process.communicate()
+
+print(output)
+
+if exitcode > 0: exitcode = 1
+sys.exit(exitcode)
+
+def readDependencyInfo(file, cache):
+  with open (f, "w") as file: file.write("#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
+    except Exception as e: print(e)
+  print(file)
+
+def poisonIncludes(deletedFiles, topdir):
+  poison = "%s/%s" % (topdir, poisondir)
+  if os.path.isdir(poison): os.removedirs(poison)
+  poisondata = "%s/.data" % poison
+  os.path.makedirs(poisondata)
+  if len(deletedFiles) > 0: print(">> Creating dummy files under $poison directory.")
+  for file in deletedFiles:
+    f = "%s/%s" % (poison,file)
+    dir = os.path.dirname(f)
+    if not os.path.isdir(dir): os.path.makedirs(dir)
+    if re.search(r'\/data\/', file): symlink(poisondata, f)
+    else:
+      try:
+        with open (f, "w") as file: file.write("#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
+      except Exception as e: print(e)
+    print(file)
+
+
+if poison_includes: poison_includes(deletedFiles, localtop)
+if poison_only: sys.exit(0)
