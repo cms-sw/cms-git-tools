@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
-import sys, re, json, os
-from os import environ, popen, path
+import sys, re, json, os, re, subprocess, gzip, tempfile
+from os import environ, path, popen, symlink
 from os.path import dirname, realpath
 from optparse import OptionParser
-import subprocess
-import re
 
 #Idea: diff checked out packages.
 #     looking for changed headers
@@ -24,7 +22,6 @@ poison_includes = None
 poison_only = 0
 jobs = 4
  
-
 
 help_text = "\n\
     Utility to check your local development area against the CMSSW release.\n\
@@ -47,7 +44,6 @@ parser.add_option("-A", dest="checkout", default=1, help = "will check all depen
 
 (options, args) = parser.parse_args()
 
-# print options.checkout
 
 if poison_only:
   checkpython = 0
@@ -117,7 +113,7 @@ packages = sorted(upackages)
 
 for package in packages:
   if re.search(r'^UserCode.*', package): continue
-  print ">> Checking %s %s" % (package, reltag)"
+  print(">> Checking %s %s" % (package, reltag))
   msgs = {"-" : {}, "x": {}}
   for diff in upackages[package]:
     _del = 0
@@ -130,7 +126,7 @@ for package in packages:
         diff = sp2[1]
       else: diff = ""
       if diff: msgs["x"][diff] = 1
-      if _del = msgs["-"][diff] = 1
+      if _del: msgs["-"][diff] = 1
   files = sorted(msgs["-"])
   deletedFiles.append(files)
   changedFiles.append(files)
@@ -182,30 +178,34 @@ exitcode = 0
 if len > 0:
   for pk in t:
     if printFileNames == 1:
-      print "pk %s" % ", ".join(sorted(recompileList.values()))
+      print("pk %s" % ", ".join(sorted(recompileList.values())))
     else:
-      print "pk %s" % ", ".join(sorted(recompileList.keys()))
+      print("pk %s" % ", ".join(sorted(recompileList.keys())))
 
 if checkout == 1:
   os.chdir(localtop)
-  #################################
-  fh, fname = tempfile(localtop .'/tmp/checkdepsXXXXX')
-  for pk in t: print pk
-  ###################################
+  temp_path = "%s/tmp/" % os.environ["CMSSW_BASE"]
+  tempfile.tempdir = temp_path
+  temp = tempfile.NamedTemporaryFile(prefix="checkdeps")
+  for pk in t: temp.write(pk)
   cmd = "cd %s/src; git cms-addpkg -f %s -q" % (localtop, fname)
   process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
   stdout, stderr = process.communicate()
   exitcode += process.returncode
+  temp.close()
 
 
 if exitcode > 0: exitcode = 1
 sys.exit(exitcode)
 
 def readDependencyInfo(file, cache):
-  try: 
-    with open (f, "w") as file: file.write("#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
-  except Exception as e: print(e)
-  print(file)
+  for line in gzip.open(file).readlines():
+    line = line.rstrip('\n')
+    file1, rest = line.split(' ', 1)
+    if file1 != "":
+      if file1 not in vals: vals[file1] = []
+      vals[file1].append(rest.split(' '))
+
 
 def poisonIncludes(deletedFiles, topdir):
   poison = "%s/%s" % (topdir, poisondir)
