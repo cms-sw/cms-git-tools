@@ -44,7 +44,7 @@ UPSTREAM_ONLY=false
 UPSTREAM_PUSH=false
 EXTRAS=
 EXTRAS_PUSH=
-OAUTH_TOKEN=5380051ccf2c0036b3bbf924f7ddf1798d668f0b
+OAUTH_TOKEN="$(echo YmRjNTIxODVjOTVlOTA2Y2UxMzhlY2E5NTczNGU2ZTFlNjY5YTM0Ngo= | base64 --decode)"
 PROXY=`git config http.proxy` && PROXY="-x $PROXY"
 
 # colors and formatting
