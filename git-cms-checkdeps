@@ -72,11 +72,13 @@ try:
     localtop = environ["CMSSW_BASE"]
 except KeyError:
     print("ERROR: Could not find developer area base path. Please run \"cmsenv\" in a developer area.")
+    sys.exit(1)
 
 try:
     releasetop = environ["CMSSW_RELEASE_BASE"]
 except KeyError:
     print("ERROR: Could not find release base path. Please run this script from a developer area.")
+    sys.exit(1)
 
 vals = {}
 changedFiles = []
@@ -87,7 +89,7 @@ upackages = {}
 def readDependencyInfo(file, cache):
     global vals
     for line in gzip.open(file).readlines():
-        line = line.rstrip('\n')
+        line = line.decode('utf-8').rstrip('\n')
         file1, rest = line.split(' ', 1)
         if file1 != "":
             if file1 not in vals:
@@ -113,7 +115,8 @@ def poisonIncludes(deletedFiles, topdir):
         else:
             try:
                 with open(f, "w") as file:
-                    file.write("#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
+                    file.write(
+                        "#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
             except Exception as e:
                 print(e, "\nERROR: Can not open file for writing: %s\n" % f)
         print("   %s" % file)
@@ -138,7 +141,7 @@ if checkbuildfile:
 
 chdir("%s/src" % localtop)
 reltag = None
-if environ["CMSSW_GIT_HASH"]:
+if environ.get("CMSSW_GIT_HASH"):
     reltag = environ["CMSSW_GIT_HASH"]
 else:
     reltag = environ["CMSSW_VERSION"]
@@ -154,13 +157,15 @@ args_3 = ['git', 'diff', '--diff-filter', 'R', '--name-status', '-r', reltag]
 pipe_0 = subprocess.Popen(args_0, stdout=subprocess.PIPE)
 pipe_1 = subprocess.Popen(args_1, stdin=pipe_0.stdout, stdout=subprocess.PIPE)
 pipe_2 = subprocess.Popen(args_2, stdin=pipe_1.stdout, stdout=subprocess.PIPE)
-pipe_3 = subprocess.Popen(args_3, stdin=pipe_2.stdout, stdout=subprocess.PIPE)
+pipe_3 = subprocess.Popen(args_3, stdout=subprocess.PIPE)
 if not pipe_3.communicate()[0]:
     stdout = pipe_2.communicate()[0].splitlines()
 else:
     stdout = pipe_3.communicate()[0].splitlines()
 for diff in stdout:
-    match = re.search(r'^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$', diff)
+    diff = diff.decode()
+    match = re.search(
+        r'^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$', diff)
     if match:
         pack = match.group(2)
         if pack not in upackages:
@@ -225,7 +230,7 @@ for file in changedFiles:
             recompile = "%s/%s" % (sp[0], sp[1])
         except IndexError:
             pass
-        if not filter(lambda x: recompile in x, packages):
+        if not list(filter(lambda x: recompile in x, packages)):
             scope = "header"
             if re.search(r'\.py$', file):
                 scope = "python"
@@ -238,10 +243,15 @@ for file in changedFiles:
             recompileList[recompile][scope] = file
 
 if big_bf != "":
-    cmd = "git diff -r %s -- %s | sed -e 's/[ \t]\+/ /' | grep '^+' | grep -i '< *use  *name *='" % (reltag, big_bf)
-    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, shell=True)
+    pipe_0 = subprocess.Popen(["git diff -r %s -- %s" % (
+            reltag, big_bf)], stdout=subprocess.PIPE)
+    pipe_1 = subprocess.Popen(["sed -e 's/[ \t]\+/ /"], stdin=pipe_0.stdout, stdout=subprocess.PIPE)
+    pipe_2 = subprocess.Popen(["grep '^+'"], stdin=pipe_1.stdout, stdout=subprocess.PIPE)
+    pipe_3 = subprocess.Popen(["grep -i '< *use  *name *='"], stdin=pipe_2.stdout, stdout=subprocess.PIPE)
+    stdout = pipe_3.communicate()[0].splitlines()
     while True:
-        diff = process.stdout.readline()
+        diff = stdout.readline()
+        diff = diff.decode()
         diff = re.sub(r'^[+]', r'', diff)
         for p in diff.split(">"):
             match = re.search(r'^\s*<\s*use\s+name\s*=\s*["]([^"]+)["]\s*', p)
@@ -260,27 +270,24 @@ exitcode = 0
 if len > 0:
     for pk in t:
         if printFileNames:
-            print("%s (%s)" % (pk, ', '.join(sorted(recompileList[pk].values()))))
+            print("%s (%s)" %
+                  (pk, ', '.join(sorted(recompileList[pk].values()))))
         else:
-            print("%s (%s)" % (pk, ', '.join(sorted(recompileList[pk].keys()))))
+            print("%s (%s)" %
+                  (pk, ', '.join(sorted(recompileList[pk].keys()))))
     if checkout:
         chdir(localtop)
         temp_path = path.join(environ["CMSSW_BASE"], "tmp")
         tempfile.tempdir = temp_path
-        temp = tempfile.NamedTemporaryFile(prefix="checkdeps", delete=False)
+        temp = tempfile.NamedTemporaryFile(prefix="checkdeps")
         fname = temp.name
         for pk in t:
-            temp.write(pk+"\n")
-        # process = subprocess.Popen(['cd', localtop + "/src"])
-        # process.wait()
-        # process2 = subprocess.Popen(['git', 'cms-addpkg', '-f', fname, '-q'])
-        # process2.wait()
-        # print process.returncode
-        # print process2.returncode
-        # exitcode =+ process.returncode + process2.returncode
-        # print exitcode
-        # temp.close()
-
+            temp.write(bytes(pk + "\n"))
+        chdir("%s/src" % localtop)
+        process = subprocess.Popen(['git', 'cms-addpkg', '-f', fname, '-q'])
+        process.wait()
+        exitcode = + process.returncode
+        temp.close()
 if exitcode:
     exitcode = 1
 sys.exit(exitcode)
