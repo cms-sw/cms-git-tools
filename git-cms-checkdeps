@@ -114,8 +114,8 @@ def poisonIncludes(deletedFiles, topdir):
             symlink(poisondata, f)
         else:
             try:
-                with open(f, "w") as file:
-                    file.write(
+                with open(f, "w") as xfile:
+                    xfile.write(
                         "#error THIS FILE HAS BEEN REMOVED FROM THE PACKAGE.\n")
             except Exception as e:
                 print(e, "\nERROR: Can not open file for writing: %s\n" % f)
@@ -166,10 +166,10 @@ for diff in stdout:
         r'^[MUDR]([0-9]*)\s+([^\/]+\/[^\/]+)\/[^\s]+(\s+[^\/]+\/[^\/]+\/[^\s]+|)$', diff)
     if match:
         pack = match.group(2)
-        if pack not in upackages:
+        if not pack in upackages:
             upackages[pack] = []
-            if not pack:
-                print(">> Package removed $pack")
+            if not path.exists(pack):
+                print(">> Package removed %s" % pack)
         upackages[pack].append(diff)
 
 packages = sorted(upackages)
@@ -242,7 +242,7 @@ for file in changedFiles:
 
 if big_bf:
     pipe_0 = subprocess.Popen(["git", "diff","-r", reltag, "--", big_bf.strip()], stdout=subprocess.PIPE)
-    for diff in pipe_0.communicate()[0].splitlines():
+    for diff in [l.decode() for l in pipe_0.communicate()[0].splitlines()]:
         if not diff.startswith('+'):
             next
         diff = re.sub(r'^[+]', r'', diff)
