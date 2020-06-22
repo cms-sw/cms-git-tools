@@ -158,10 +158,8 @@ pipe_0 = subprocess.Popen(args_0, stdout=subprocess.PIPE)
 pipe_1 = subprocess.Popen(args_1, stdin=pipe_0.stdout, stdout=subprocess.PIPE)
 pipe_2 = subprocess.Popen(args_2, stdin=pipe_1.stdout, stdout=subprocess.PIPE)
 pipe_3 = subprocess.Popen(args_3, stdout=subprocess.PIPE)
-if not pipe_3.communicate()[0]:
-    stdout = pipe_2.communicate()[0].splitlines()
-else:
-    stdout = pipe_3.communicate()[0].splitlines()
+stdout = pipe_2.communicate()[0].splitlines()
+stdout.extend(pipe_3.communicate()[0].splitlines())
 for diff in stdout:
     diff = diff.decode()
     match = re.search(
@@ -182,7 +180,7 @@ for package in packages:
     msgs = {"-": {}, "x": {}}
     for diff in upackages[package]:
         _del = None
-        match = re.search(r'^(R[0-9]*)(\s+[^\s]+)\s+', diff)
+        match = re.search(r'^(R[0-9]*)\s+([^\s]+)\s+', diff)
         if match:
             diff = "D %s" % match.group(2)
         match_M = re.search(r'^(M)', diff)
@@ -242,22 +240,20 @@ for file in changedFiles:
                 recompileList[recompile][scope] = {}
             recompileList[recompile][scope] = file
 
-if big_bf != "":
-    pipe_0 = subprocess.Popen(["git diff -r %s -- %s" % (
-            reltag, big_bf)], stdout=subprocess.PIPE)
-    pipe_1 = subprocess.Popen(["sed -e 's/[ \t]\+/ /"], stdin=pipe_0.stdout, stdout=subprocess.PIPE)
-    pipe_2 = subprocess.Popen(["grep '^+'"], stdin=pipe_1.stdout, stdout=subprocess.PIPE)
-    pipe_3 = subprocess.Popen(["grep -i '< *use  *name *='"], stdin=pipe_2.stdout, stdout=subprocess.PIPE)
-    stdout = pipe_3.communicate()[0].splitlines()
-    while True:
-        diff = stdout.readline()
-        diff = diff.decode()
+if big_bf:
+    pipe_0 = subprocess.Popen(["git", "diff","-r", reltag, "--", big_bf.strip()], stdout=subprocess.PIPE)
+    for diff in pipe_0.communicate()[0].splitlines():
+        if not diff.startswith('+'):
+            next
         diff = re.sub(r'^[+]', r'', diff)
         for p in diff.split(">"):
-            match = re.search(r'^\s*<\s*use\s+name\s*=\s*["]([^"]+)["]\s*', p)
+            match = re.search(r'^\s*<\s*use\s+name\s*=\s*["]([^"]+)["]\s*', p, re.I)
             if match:
                 if path.exists("%s/src/%s" % (releasetop, match.group(1))):
-                    recompileList[match.group(1)]["biglib"] = "BigProducts"
+                    pack = match.group(1)
+                    if not pack in recompileList:
+                        recompileList[pack]= {}
+                    recompileList[pack]["biglib"] = "BigProducts"
 
 t = sorted(recompileList.keys())
 len = len(t)
