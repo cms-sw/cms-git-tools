@@ -275,10 +275,10 @@ if len > 0:
         chdir(localtop)
         temp_path = path.join(environ["CMSSW_BASE"], "tmp")
         tempfile.tempdir = temp_path
-        temp = tempfile.NamedTemporaryFile(prefix="checkdeps", delete=False)
+        temp = tempfile.NamedTemporaryFile(prefix="checkdeps", mode="w",delete=False)
         fname = temp.name
         for pk in t:
-            temp.write(bytes(pk + "\n"))
+            temp.write(pk + "\n")
         temp.close()
         chdir("%s/src" % localtop)
         process = subprocess.Popen(['git', 'cms-addpkg', '-f', fname, '-q'])
