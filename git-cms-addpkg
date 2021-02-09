@@ -225,11 +225,6 @@ if [ "$CMSSW_GIT_REFERENCE" == "" ] && [ -f $CMSSW_BASE/src/.git/objects/info/al
   CMSSW_GIT_REFERENCE=`cat $CMSSW_BASE/src/.git/objects/info/alternates | head -n1`
 fi
 
-# if using a personal reference repository, update it from the official one
-if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
-  (cd $CMSSW_GIT_REFERENCE ; git remote update origin >&${verbose} 2>&1)
-fi
-
 if [ "$(git status --porcelain --untracked=no | grep '^[ACDMRU]')" ]; then
   $ECHO "${RED}Error:${NORMAL} there are staged but not committed changes on your working tree, please commit or stash them."
   exit 1
