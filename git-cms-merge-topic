@@ -33,7 +33,6 @@ usage() {
     $ECHO "-n, --new-base       \tspecify new base for rebase (default = current branch)"
   fi
   $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
-  $ECHO "-A, --all-deps     \tperform checkdeps for all dependencies (header, python, BuildFile)"
   $ECHO "                   \t(default: header, python)"
   exit $CODE
 }
@@ -70,7 +69,6 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -A|--all-deps)
-      ALLCHECKDEPS=-A
       shift
       ;;
     -d|--debug)
@@ -275,7 +273,7 @@ fi
 git branch -D $TEMP_BRANCH >&${debug} || true
 # Do checkdeps unless not specified.
 if [ ! "X$UNSAFE" = Xtrue ]; then
-  git cms-checkdeps -a $ALLCHECKDEPS
+  git cms-checkdeps -a -A
 fi
 # check if topic branch is behind release branch
 if [ "$COMMAND_NAME" = "cms-checkout-topic" ]; then
