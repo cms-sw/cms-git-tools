@@ -328,7 +328,7 @@ if [ -e $CMSSW_GIT_REFERENCE/create-`whoami` ]; then
   (cd $CMSSW_GIT_REFERENCE ; git remote update origin >&${verbose} 2>&1)
 fi
 
-mkdir -p $CMSSW_BASE/src
+[ -d $CMSSW_BASE/src ] || mkdir $CMSSW_BASE/src
 cd $CMSSW_BASE/src
 
 # setup the upstream "official" repository
