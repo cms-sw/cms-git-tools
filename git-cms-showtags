@@ -1,4 +1,11 @@
-#!/usr/bin/env python
+#!/bin/bash
+
+""":"
+python_cmd="python"
+python3 -V >/dev/null 2>&1 && python_cmd="python3"
+exec ${python_cmd} $0 ${1+"$@"}
+"""
+
 from optparse import OptionParser
 from commands import getstatusoutput
 from os import environ
@@ -43,14 +50,14 @@ if __name__ == "__main__":
 
   for (k,v) in sorted(baseTags.iteritems()):
     if not k in newTags:
-      print format("%(package)s\t%(old)s\t%(new)s",
+      print (format("%(package)s\t%(old)s\t%(new)s",
                    package=k.ljust(minPkg, " "),
                    old=v.ljust(minTag, " "),
-                   new="REMOVED")
+                   new="REMOVED"))
       continue
     if newTags[k] == v:
       continue
-    print format("%(package)s\t%(old)s\t%(new)s",
+    print (format("%(package)s\t%(old)s\t%(new)s",
                  package=k.ljust(minPkg, " "),
                  old=v.ljust(minTag, " "),
-                 new=newTags[k])
+                 new=newTags[k]))
