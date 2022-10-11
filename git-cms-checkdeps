@@ -233,7 +233,7 @@ for file in changedFiles:
         try:
             recompile = "%s/%s" % (sp[0], sp[1])
         except IndexError:
-            pass
+            recompile = ""
         if not list(filter(lambda x: recompile==x, packages)):
             scope = "header"
             if re.search(r'\.py$', file):
