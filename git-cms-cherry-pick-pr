@@ -2,10 +2,10 @@
 
 function usage() {
   cat <<@EOF
-Usage: git cms-show-pr <pull request> [<branch>]
+Usage: git cms-cherry-pick-pr <pull request> [<branch>]
 
 Description:
-  Cherry pick the commits that are part of a pull request that has been opened or merged 
+  Cherry pick the commits that compose pull request that has been opened or merged
   in the master branch, or in <branch> if it is specified.
 @EOF
   exit $1
