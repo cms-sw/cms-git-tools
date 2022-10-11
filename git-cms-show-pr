@@ -34,4 +34,4 @@ git fetch -q $REMOTE pull/$PULL/head
 BRANCH_POINT=$(diff -u <(git rev-list --first-parent FETCH_HEAD) <(git rev-list --first-parent $REMOTE/$BRANCH) | sed -ne 's/^ //p' | head -n1 -)
 
 # show the commits in the pull request
-git log --oneline FETCH_HEAD...$BRANCH_POINT
+git log --no-decorate --oneline --reverse --topo-order FETCH_HEAD...$BRANCH_POINT

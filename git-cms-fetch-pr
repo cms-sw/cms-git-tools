@@ -21,7 +21,7 @@ while [ "$#" != 0 ]; do
       usage 1
       ;;
     *)
-      if [ "$COMMAND" == "" ]; then
+      if [ "$PULL" == "" ]; then
         PULL=$1
       elif [ "$BRANCH" == "" ]; then
         BRANCH=$1
