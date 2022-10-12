@@ -98,9 +98,11 @@ def readDependencyInfo(file, cache):
         line = line.decode('utf-8').rstrip('\n')
         file1, rest = line.split(' ', 1)
         if file1 != "":
+            deps = [d for d in rest.split(' ') if d]
+            if not deps: continue
             if file1 not in vals:
                 vals[file1] = []
-            vals[file1].extend(rest.split(' '))
+            vals[file1].extend(deps)
 
 
 def poisonIncludes(deletedFiles, topdir):
