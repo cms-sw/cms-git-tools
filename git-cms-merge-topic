@@ -5,6 +5,27 @@ case `uname` in
   *) ECHO="echo" ;;
 esac
 
+check_command(){
+  declare -A ARG_INDICES
+  ARG_INDICES["cms-merge-topic"]="0 1 2 3 4 5 6 7 8 10"
+  ARG_INDICES["cms-rebase-topic"]="0 1 2 3 4 5 6 8 9 10"
+  ARG_INDICES["cms-checkout-topic"]="0 1 2 8 10"
+  ARG_INDICES["cms-squash-topic"]="0 1 2 3 4 8 10 11 12"
+
+  COMMAND_TO_CHECK=$1
+  IND_TO_CHECK=$2
+  OPTNAME=$3
+  if [ -z "$IND_TO_CHECK" ]; then
+    echo "${ARG_INDICES[$COMMAND_TO_CHECK]}"
+  # check if index is in allowed list
+  elif [[ " ${ARG_INDICES[$COMMAND_TO_CHECK]} " =~ " ${IND_TO_CHECK} " ]]; then
+    return 0
+  else
+    $ECHO "Unsupported option $OPTNAME"
+    exit 1
+  fi
+}
+
 usage() {
   COMMAND_NAME=$1
   CODE=$2
@@ -26,7 +47,7 @@ usage() {
   ARGS[3]="    --no-backup       \tdon't create backup branch"
   ARGS[4]="    --backup-name  \tspecify suffix for backup branch (default = _backup)"
   ARGS[5]="-s, --strategy     \tspecify strategy when merging"
-  ARGS[6]="-X, --strategy-option     \tspecify strategy option when merging"
+  ARGS[6]="-X, --strategy-option \tspecify strategy option when merging"
   ARGS[7]="    --no-commit    \tdo not do the final commit when merging"
   ARGS[8]="-o, --old-base       \tspecify old base for merge-base or rebase (not used by default)"
   ARGS[9]="-n, --new-base       \tspecify new base for rebase (default = current branch)"
@@ -34,13 +55,7 @@ usage() {
   ARGS[11]="    --current    \tsquash the current branch"
   ARGS[12]="-m, --message       \tspecify new message for squashed commit (instead of using prepopulated message from original commits)"
 
-  declare -A ARG_INDICES
-  ARG_INDICES["cms-merge-topic"]="0 1 2 3 4 5 6 7 8 10"
-  ARG_INDICES["cms-rebase-topic"]="0 1 2 3 4 5 6 8 9 10"
-  ARG_INDICES["cms-checkout-topic"]="0 1 2 8 10"
-  ARG_INDICES["cms-squash-topic"]="0 1 2 3 4 8 10 11 12"
-
-  for IND in ${ARG_INDICES[$COMMAND_NAME]}; do
+  for IND in $(check_command $COMMAND_NAME); do
     $ECHO "${ARGS[$IND]}"
   done
 
@@ -59,7 +74,6 @@ if [ "$PROTOCOL" != "https" ] && [ "$PROTOCOL" != "ssh" ] && [ "$PROTOCOL" != "m
 fi
 
 DEBUG=0
-VERBOSE=1
 INITOPTIONS=""                      # options passed to git cms-init
 BACKUP=true
 BACKUP_NAME=_backup
@@ -73,64 +87,77 @@ fi
 
 while [ $# -gt 0 ]; do
   case $1 in 
-    -u|--unsafe)
-      UNSAFE=true
-      shift
-      ;;
     # for backward compatibility (now default)  
     -A|--all-deps)
       shift
       ;;
+    # "hidden" option to pass to git cms-init
+    -q|--quiet|-z)
+      INITOPTIONS="$INITOPTIONS $1"
+      DEBUG=0
+      shift
+      ;;
+    # preserving order from usage()
     -d|--debug)
+      check_command $COMMAND_NAME 0 $1
       INITOPTIONS="$INITOPTIONS $1"
       DEBUG=1
       shift
       ;;
-    -q|--quiet)
-      INITOPTIONS="$INITOPTIONS $1"
-      VERBOSE=0
-      DEBUG=0
-      shift
-      ;;
     --https )
+      check_command $COMMAND_NAME 1 $1
       INITOPTIONS="$INITOPTIONS $1"
       PROTOCOL=https
       shift
       ;;
     --ssh )
+      check_command $COMMAND_NAME 2 $1
       INITOPTIONS="$INITOPTIONS $1"
       PROTOCOL=ssh
       shift
       ;;
-    --no-commit )
-      NO_COMMIT=--no-commit 
-      shift
-      ;;
     --no-backup )
+      check_command $COMMAND_NAME 3 $1
       BACKUP=""
       shift
       ;;
     --backup-name )
+      check_command $COMMAND_NAME 4 $1
       BACKUP_NAME=$2
       shift; shift
       ;;
     -s | --strategy )
+      check_command $COMMAND_NAME 5 $1
       MERGE_STRATEGY="-s $2"
       shift; shift
       ;;
     -X | --strategy-option )
+      check_command $COMMAND_NAME 6 $1
       STRATEGY_OPTION="-X $2"
       shift; shift
       ;;
+    --no-commit )
+      check_command $COMMAND_NAME 7 $1
+      NO_COMMIT=--no-commit 
+      shift
+      ;;
     -o | --old-base )
+      check_command $COMMAND_NAME 8 $1
       OLD_BASE=$2
       shift; shift
       ;;
     -n | --new-base )
+      check_command $COMMAND_NAME 9 $1
       NEW_BASE=$2
       shift; shift
       ;;
+    -u|--unsafe)
+      check_command $COMMAND_NAME 10 $1
+      UNSAFE=true
+      shift
+      ;;
     --current )
+      check_command $COMMAND_NAME 11 $1
       # settings related to using current branch for squash
       BRANCH=$(git rev-parse --abbrev-ref HEAD)
       LOCAL_BRANCH="$BRANCH"
@@ -139,6 +166,7 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -m | --message )
+      check_command $COMMAND_NAME 12 $1
       MESSAGE=$2
       shift; shift
       ;;
