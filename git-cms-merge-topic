@@ -321,6 +321,9 @@ if [ "$NOMERGE" = "true" ]; then
     fi
   # or a squash
   elif [ "$COMMAND_NAME" = "cms-squash-topic" ]; then
+    # save the list of authors
+    SQUASH_AUTHOR="$(git config --get user.name) <$(git config --get user.email)>"
+    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH --format="%an <%ae>" | sort -u | grep -v "$SQUASH_AUTHOR")
     # by default, automatically populate commit message
     git reset --hard $MERGE_BASE
     git merge --squash "HEAD@{1}"
@@ -328,6 +331,11 @@ if [ "$NOMERGE" = "true" ]; then
       git commit -m "$MESSAGE"
     else
       GIT_EDITOR=true git commit
+    fi
+    # amend to include extra authors
+    if [ ${#COAUTHORS[@]} -gt 0 ]; then
+      COAUTHOR_MESSAGE=$(printf 'Co-authored-by: %s\n' "${COAUTHORS[@]}")
+      git commit --amend --message="$(git show --format=%B --no-patch HEAD)" --message="$COAUTHOR_MESSAGE"
     fi
   fi
 # otherwise, perform merge
