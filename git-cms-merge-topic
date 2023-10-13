@@ -323,7 +323,14 @@ if [ "$NOMERGE" = "true" ]; then
   elif [ "$COMMAND_NAME" = "cms-squash-topic" ]; then
     # save the list of authors
     SQUASH_AUTHOR="$(git config --get user.name) <$(git config --get user.email)>"
-    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH --format="%an <%ae>" | sort -u | grep -v "$SQUASH_AUTHOR")
+    # git log w/ specified format prints:
+    #   Co-authored-by: Author <email>
+    #   commit raw subject + body (which might also contain Co-authored-by lines, possibly indented)
+    # sed -n suppresses printouts by default
+    #   then selects lines matching: any number of spaces + "Co-authored-by: " (which is then removed)
+    #   i = case-insensitive, p = print
+    # finally, sort removes duplicates, and grep removes the current user (who will already be the author of the squash commit)
+    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH --format="Co-Authored-by: %an <%ae>\n%B" | sed -n 's/^ *Co-authored-by: //ip' | sort -u | grep -v "$SQUASH_AUTHOR")
     # by default, automatically populate commit message
     git reset --hard $MERGE_BASE
     git merge --squash "HEAD@{1}"
