@@ -1,0 +1,78 @@
+.TH GIT_CMS_SQUASH_TOPIC 1 LOCAL
+
+.SH NAME
+
+git-cms-squash-topic - CMSSW helper to squash commits in a given branch.
+
+.SH SYNOPSIS
+
+.B git cms-squash-topic [[<github-user>:]{<branch>|<pull-request-id>}]
+
+.SH OPTIONS
+
+.TP 5
+
+-d, --debug
+
+Enable debug output.
+
+.TP 5
+
+--https
+
+Access GitHub over https (default).
+
+.TP 5
+
+--ssh
+
+Access GitHub over ssh.
+
+.TP 5
+
+--no-backup
+
+Don't create a backup branch.
+
+.TP 5
+
+--backup-name
+
+Specify suffix for backup branch (default = _backup).
+
+.TP 5
+
+-o, --old-base
+
+Specify old base for merge-base or rebase (not used by default).
+
+.TP 5
+
+-u, --unsafe
+
+Do not perform checkdeps at the end of the checkout.
+
+.TP 5
+
+--current
+
+Squash the current branch. (implies --unsafe and --old-base $CMSSW_VERSION)
+
+.TP 5
+
+-m, --message
+
+Specify new message for squashed commit (instead of using prepopulated message from original commits)
+
+.SH DESCRIPTION
+
+This is an alternate mode for git-cms-merge-topic.
+It is useful to squash a PR branch if requested by the release manager
+or if desired by the developer.
+
+It can squash the current branch using the --current option.
+If a remote branch is specified, git-cms-checkout-topic will automatically be performed for that branch.
+
+To squash only a subset of the newest commits in a branch, change the --old-base value.
+(Squashing intermediate commits, i.e. a subset that does not extend to the newest commits,
+is not part of this tool; that operation requires the use of interactive rebase, i.e. git rebase -i.)

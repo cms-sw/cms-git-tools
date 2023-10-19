@@ -5,35 +5,60 @@ case `uname` in
   *) ECHO="echo" ;;
 esac
 
+check_command(){
+  declare -A ARG_INDICES
+  ARG_INDICES["cms-merge-topic"]="0 1 2 3 4 5 6 7 8 10"
+  ARG_INDICES["cms-rebase-topic"]="0 1 2 3 4 5 6 8 9 10"
+  ARG_INDICES["cms-checkout-topic"]="0 1 2 8 10"
+  ARG_INDICES["cms-squash-topic"]="0 1 2 3 4 8 10 11 12"
+
+  COMMAND_TO_CHECK=$1
+  IND_TO_CHECK=$2
+  OPTNAME=$3
+  if [ -z "$IND_TO_CHECK" ]; then
+    echo "${ARG_INDICES[$COMMAND_TO_CHECK]}"
+  # check if index is in allowed list
+  elif [[ " ${ARG_INDICES[$COMMAND_TO_CHECK]} " =~ " ${IND_TO_CHECK} " ]]; then
+    return 0
+  else
+    $ECHO "Unsupported option $OPTNAME"
+    exit 1
+  fi
+}
+
 usage() {
   COMMAND_NAME=$1
   CODE=$2
-  $ECHO "git $COMMAND_NAME [options] [<github-user>:]{<branch>|<pull-request-id>}"
+  POS_ARG="[<github-user>:]{<branch>|<pull-request-id>}"
+  # positional arg is not required for squash
+  if [ "$COMMAND_NAME" = "cms-squash-topic" ]; then
+    POS_ARG="[$POS_ARG]"
+  fi
+  $ECHO "git $COMMAND_NAME [options] $POS_ARG"
   $ECHO
   $ECHO "Options:"
   $ECHO "-h, --help         \tthis help message"
   $ECHO
-  $ECHO "-d, --debug        \tenable debug output"
-  $ECHO "    --https        \taccess GitHub over https (default)"
-  $ECHO "    --ssh          \taccess GitHub over ssh"
-  # not for checkout-topic
-  if [ "$COMMAND_NAME" != "cms-checkout-topic" ]; then
-    $ECHO "    --no-backup       \tdon't create backup branch"
-    $ECHO "    --backup-name  \tspecify suffix for backup branch (default = _backup)"
-    $ECHO "-s, --strategy     \tspecify strategy when merging"
-    $ECHO "-X, --strategy-option     \tspecify strategy option when merging"
-  fi
-  # only for merge-topic
-  if [ "$COMMAND_NAME" = "cms-merge-topic" ]; then
-    $ECHO "    --no-commit    \tdo not do the final commit when merging"
-  fi
-  $ECHO "-o, --old-base       \tspecify old base for merge-base or rebase (not used by default)"
-  # only for rebase-topic
-  if [ "$COMMAND_NAME" = "cms-rebase-topic" ]; then
-    $ECHO "-n, --new-base       \tspecify new base for rebase (default = current branch)"
-  fi
-  $ECHO "-u, --unsafe       \tdo not perform checkdeps at the end"
-  $ECHO "                   \t(default: header, python)"
+
+  ARGS=()
+  ARGS[0]="-d, --debug       \tenable debug output"
+  ARGS[1]="    --https        \taccess GitHub over https (default)"
+  ARGS[2]="    --ssh          \taccess GitHub over ssh"
+  ARGS[3]="    --no-backup       \tdon't create backup branch"
+  ARGS[4]="    --backup-name  \tspecify suffix for backup branch (default = _backup)"
+  ARGS[5]="-s, --strategy     \tspecify strategy when merging"
+  ARGS[6]="-X, --strategy-option \tspecify strategy option when merging"
+  ARGS[7]="    --no-commit    \tdo not do the final commit when merging"
+  ARGS[8]="-o, --old-base       \tspecify old base for merge-base or rebase (not used by default)"
+  ARGS[9]="-n, --new-base       \tspecify new base for rebase (default = current branch)"
+  ARGS[10]="-u, --unsafe       \tdo not perform checkdeps at the end\n                   \t(default: header, python)"
+  ARGS[11]="    --current    \tsquash the current branch"
+  ARGS[12]="-m, --message       \tspecify new message for squashed commit (instead of using prepopulated message from original commits)"
+
+  for IND in $(check_command $COMMAND_NAME); do
+    $ECHO "${ARGS[$IND]}"
+  done
+
   exit $CODE
 }
 
@@ -49,75 +74,100 @@ if [ "$PROTOCOL" != "https" ] && [ "$PROTOCOL" != "ssh" ] && [ "$PROTOCOL" != "m
 fi
 
 DEBUG=0
-VERBOSE=1
 INITOPTIONS=""                      # options passed to git cms-init
 BACKUP=true
 BACKUP_NAME=_backup
 
 COMMAND_NAME=$(basename $0 | sed -e's/^git-//')
-if [ "$COMMAND_NAME" = "cms-checkout-topic" ] || [ "$COMMAND_NAME" = "cms-rebase-topic" ]; then
+if [ "$COMMAND_NAME" != "cms-merge-topic" ]; then
   NOMERGE=true
-fi
-if [ "$COMMAND_NAME" = "cms-merge-topic" ]; then
+else
   INITOPTIONS="--upstream-only"
 fi
 
 while [ $# -gt 0 ]; do
   case $1 in 
-    -u|--unsafe)
-      UNSAFE=true
-      shift
-      ;;
+    # for backward compatibility (now default)  
     -A|--all-deps)
       shift
       ;;
+    # "hidden" option to pass to git cms-init
+    -q|--quiet|-z)
+      INITOPTIONS="$INITOPTIONS $1"
+      DEBUG=0
+      shift
+      ;;
+    # preserving order from usage()
     -d|--debug)
+      check_command $COMMAND_NAME 0 $1
       INITOPTIONS="$INITOPTIONS $1"
       DEBUG=1
       shift
       ;;
-    -q|--quiet)
-      INITOPTIONS="$INITOPTIONS $1"
-      VERBOSE=0
-      DEBUG=0
-      shift
-      ;;
     --https )
+      check_command $COMMAND_NAME 1 $1
       INITOPTIONS="$INITOPTIONS $1"
       PROTOCOL=https
       shift
       ;;
     --ssh )
+      check_command $COMMAND_NAME 2 $1
       INITOPTIONS="$INITOPTIONS $1"
       PROTOCOL=ssh
       shift
       ;;
-    --no-commit )
-      NO_COMMIT=--no-commit 
-      shift
-      ;;
     --no-backup )
+      check_command $COMMAND_NAME 3 $1
       BACKUP=""
       shift
       ;;
     --backup-name )
+      check_command $COMMAND_NAME 4 $1
       BACKUP_NAME=$2
       shift; shift
       ;;
     -s | --strategy )
+      check_command $COMMAND_NAME 5 $1
       MERGE_STRATEGY="-s $2"
       shift; shift
       ;;
     -X | --strategy-option )
+      check_command $COMMAND_NAME 6 $1
       STRATEGY_OPTION="-X $2"
       shift; shift
       ;;
+    --no-commit )
+      check_command $COMMAND_NAME 7 $1
+      NO_COMMIT=--no-commit 
+      shift
+      ;;
     -o | --old-base )
+      check_command $COMMAND_NAME 8 $1
       OLD_BASE=$2
       shift; shift
       ;;
     -n | --new-base )
+      check_command $COMMAND_NAME 9 $1
       NEW_BASE=$2
+      shift; shift
+      ;;
+    -u|--unsafe)
+      check_command $COMMAND_NAME 10 $1
+      UNSAFE=true
+      shift
+      ;;
+    --current )
+      check_command $COMMAND_NAME 11 $1
+      # settings related to using current branch for squash
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      LOCAL_BRANCH="$BRANCH"
+      BRANCH_DEFAULTED=true
+      UNSAFE=true 
+      shift
+      ;;
+    -m | --message )
+      check_command $COMMAND_NAME 12 $1
+      MESSAGE=$2
       shift; shift
       ;;
     -h|--help)
@@ -186,8 +236,6 @@ else
   fi
 fi
 
-PULL_ID=$1
-
 TEMP_BRANCH_WORD=$(echo $COMMAND_NAME | cut -d'-' -f2)
 TEMP_BRANCH=${TEMP_BRANCH_WORD}-attempt
 
@@ -217,37 +265,52 @@ else
   REPOSITORY=https://github.com/$GITHUB_USER/cmssw.git
 fi
 
-# check if the "branch" is actually an annotated tag, and dereference it
-COMMIT=`git ls-remote -t $REPOSITORY $BRANCH^{} | cut -c -40`
-if [ -z "$COMMIT" ]; then
-  COMMIT=$BRANCH
-fi
+FULL_BRANCH=$GITHUB_USER/$BRANCH
+# if squashing current branch, default base is CMSSW release
+if [ "$BRANCH_DEFAULTED" = "true" ]; then
+  FULL_BRANCH=$BRANCH
+  if [ -z "$OLD_BASE" ]; then
+    OLD_BASE=$CMSSW_VERSION
+  fi
+  # temp branch will not be used
+  TEMP_BRANCH=
+else
+  # check if the "branch" is actually an annotated tag, and dereference it
+  COMMIT=`git ls-remote -t $REPOSITORY $BRANCH^{} | cut -c -40`
+  if [ -z "$COMMIT" ]; then
+    COMMIT=$BRANCH
+  fi
 
-# Fetch the branch specified from github and replace merge-attempt with it. 
-# The + is used to force the merge-attempt branch to be updated.
-git fetch -n $REPOSITORY +$COMMIT:$GITHUB_USER/$BRANCH
-# Save the name of the current branch.
-CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
-# Attempt a merge in a separate branch
-git checkout $TEMP_BRANCH >&${debug}
+  # Fetch the branch specified from github and replace merge-attempt with it. 
+  # The + is used to force the merge-attempt branch to be updated.
+  git fetch -n $REPOSITORY +$COMMIT:$FULL_BRANCH
+  # Save the name of the current branch.
+  CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+  # Attempt a merge in a separate branch
+  git checkout $TEMP_BRANCH >&${debug}
+fi
 if [ -n "$OLD_BASE" ]; then
   MERGE_BASE_BRANCH=$OLD_BASE
 else
   MERGE_BASE_BRANCH=$CURRENT_BRANCH
 fi
-MERGE_BASE=`git merge-base $GITHUB_USER/$BRANCH $MERGE_BASE_BRANCH`
-git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $GITHUB_USER/$BRANCH
-git read-tree -mu HEAD
+MERGE_BASE=`git merge-base $FULL_BRANCH $MERGE_BASE_BRANCH`
+if [ "$BRANCH_DEFAULTED" != "true" ]; then
+  git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $FULL_BRANCH
+  git read-tree -mu HEAD
+fi
 
 # optional backup (not for checkout-topic)
 if [ "$BACKUP" = "true" ] && [ "$COMMAND_NAME" != "cms-checkout-topic" ]; then
-  git branch -f ${LOCAL_BRANCH}${BACKUP_NAME} $GITHUB_USER/$BRANCH
+  git branch -f ${LOCAL_BRANCH}${BACKUP_NAME} $FULL_BRANCH
 fi
 
 # in no-merge case, just checkout a new branch
 if [ "$NOMERGE" = "true" ]; then
-  git checkout -B $LOCAL_BRANCH $GITHUB_USER/$BRANCH
-  echo "Created branch $LOCAL_BRANCH to follow $BRANCH from repository $GITHUB_USER"
+  if [ "$BRANCH_DEFAULTED" != "true" ]; then
+    git checkout -B $LOCAL_BRANCH $FULL_BRANCH
+    echo "Created branch $LOCAL_BRANCH to follow $BRANCH from repository $GITHUB_USER"
+  fi
   # now try a rebase if desired
   if [ "$COMMAND_NAME" = "cms-rebase-topic" ]; then
     if [ -n "$OLD_BASE" ]; then
@@ -255,6 +318,31 @@ if [ "$NOMERGE" = "true" ]; then
       git rebase $MERGE_STRATEGY $STRATEGY_OPTION --onto $NEW_BASE $OLD_BASE $LOCAL_BRANCH
     else
       git rebase $MERGE_STRATEGY $STRATEGY_OPTION $NEW_BASE $LOCAL_BRANCH
+    fi
+  # or a squash
+  elif [ "$COMMAND_NAME" = "cms-squash-topic" ]; then
+    # save the list of authors
+    SQUASH_AUTHOR="$(git config --get user.name) <$(git config --get user.email)>"
+    # git log w/ specified format prints:
+    #   Co-authored-by: Author <email>
+    #   commit raw subject + body (which might also contain Co-authored-by lines, possibly indented)
+    # sed -n suppresses printouts by default
+    #   then selects lines matching: any number of spaces + "Co-authored-by: " (which is then removed)
+    #   i = case-insensitive, p = print
+    # finally, sort removes duplicates, and grep removes the current user (who will already be the author of the squash commit)
+    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH --format="Co-Authored-by: %an <%ae>\n%B" | sed -n 's/^ *Co-authored-by: //ip' | sort -u | grep -v "$SQUASH_AUTHOR")
+    # by default, automatically populate commit message
+    git reset --hard $MERGE_BASE
+    git merge --squash "HEAD@{1}"
+    if [ -n "$MESSAGE" ]; then
+      git commit -m "$MESSAGE"
+    else
+      GIT_EDITOR=true git commit
+    fi
+    # amend to include extra authors
+    if [ ${#COAUTHORS[@]} -gt 0 ]; then
+      COAUTHOR_MESSAGE=$(printf 'Co-authored-by: %s\n' "${COAUTHORS[@]}")
+      git commit --amend --message="$(git show --format=%B --no-patch HEAD)" --message="$COAUTHOR_MESSAGE"
     fi
   fi
 # otherwise, perform merge
@@ -270,13 +358,15 @@ else
   git merge --ff $TEMP_BRANCH >&${debug}
 fi
 # Delete the branch used for merge
-git branch -D $TEMP_BRANCH >&${debug} || true
+if [ -n "$TEMP_BRANCH" ]; then
+  git branch -D $TEMP_BRANCH >&${debug} || true
+fi
 # Do checkdeps unless not specified.
 if [ ! "X$UNSAFE" = Xtrue ]; then
   git cms-checkdeps -a -A
 fi
 # check if topic branch is behind release branch
-if [ "$COMMAND_NAME" = "cms-checkout-topic" ]; then
+if [ "$COMMAND_NAME" = "cms-checkout-topic" ] || ( [ "$COMMAND_NAME" = "cms-squash-topic" ] && [ "$BRANCH_DEFAULTED" != "true" ] ); then
   NBEHIND=$(git rev-list $LOCAL_BRANCH..$CURRENT_BRANCH | wc -l)
   if [ "$NBEHIND" -gt 0 ]; then
     $ECHO "Warning: $LOCAL_BRANCH is behind $CURRENT_BRANCH. You may not be able to compile or run."
