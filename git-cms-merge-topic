@@ -330,7 +330,7 @@ if [ "$NOMERGE" = "true" ]; then
     #   then selects lines matching: any number of spaces + "Co-authored-by: " (which is then removed)
     #   i = case-insensitive, p = print
     # finally, sort removes duplicates, and grep removes the current user (who will already be the author of the squash commit)
-    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH --format="Co-Authored-by: %an <%ae>\n%B" | sed -n 's/^ *Co-authored-by: //ip' | sort -u | grep -v "$SQUASH_AUTHOR")
+    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH --format="Co-Authored-by: %an <%ae>%n%B" | sed -n 's/^ *Co-authored-by: //ip' | sort -u | grep -v "$SQUASH_AUTHOR")
     # by default, automatically populate commit message
     git reset --hard $MERGE_BASE
     git merge --squash "HEAD@{1}"
