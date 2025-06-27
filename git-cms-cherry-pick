@@ -1,0 +1,28 @@
+#! /bin/bash -e
+
+function usage() {
+  cat <<@EOF
+Usage: git cms-cherry-pick <commit1>[..<commit2>]
+
+Description:
+  Cherry pick commit(s), ensuring modified subpackages are added before the commits are applied.
+@EOF
+  exit $1
+}
+
+# the number of the pull request
+COMMITS=${1}
+[ "$COMMITS" ] || usage 1
+
+# FIXME add repository where commits to be cherry-picked can be found?
+# git cms-remote add <remote>
+# git fetch <remote>
+
+# go to release
+[ "$CMSSW_BASE" ] && cd $CMSSW_BASE/src
+
+# download modified subpackages
+git diff ${COMMITS} --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
+
+# cherry-pick with user arguments
+git cherry-pick ${COMMITS} ${@:2}
