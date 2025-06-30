@@ -10,10 +10,10 @@ Description:
   exit $1
 }
 
-# the number of the pull request
 COMMITS=${1}
 [ "$COMMITS" ] || usage 1
 
+# optional remote
 REMOTE=""
 
 while [[ $# -gt 0 ]]; do
