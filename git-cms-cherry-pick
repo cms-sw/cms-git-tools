@@ -17,21 +17,19 @@ COMMITS=${1}
 # optional remote
 REMOTE=""
 
-# store options before their deletion in the loop below
-OPTIONS=("$@")
-
+OPTIONS=()
+shift; # start after the commit argument
 while [[ $# -gt 0 ]]; do
-    shift; # start after the commit argument
-    key=${1} 
-    case $key in
+    case ${1} in
 	-h|--help)
 	    usage 1
-	    exit 1
 	    ;;
 	-r|--remote)
 	    REMOTE=${2}
 	    shift; shift;
 	    ;;
+	*)  OPTIONS+=("$1");
+	    shift;;
     esac
 done
 
@@ -48,9 +46,4 @@ fi
 git diff ${COMMITS} --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
 
 # cherry-pick with user arguments
-
-if [ -n ${REMOTE} ]; then
-    git cherry-pick ${COMMITS} ${OPTIONS[@]:3}
-else
-    git cherry-pick ${COMMITS} ${OPTIONS[@]:1}
-fi
+git cherry-pick ${COMMITS} ${OPTIONS[@]}
