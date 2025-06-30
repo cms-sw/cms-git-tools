@@ -10,11 +10,15 @@ Description:
   exit $1
 }
 
+# mandatory commit(s) to cherry-pick
 COMMITS=${1}
 [ "$COMMITS" ] || usage 1
 
 # optional remote
 REMOTE=""
+
+# store options before their deletion in the loop below
+OPTIONS=("$@")
 
 while [[ $# -gt 0 ]]; do
     shift; # start after the commit argument
@@ -31,21 +35,22 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# go to release
+[ "$CMSSW_BASE" ] && cd $CMSSW_BASE/src
+
 # add repository where commits to be cherry-picked can be found
-if [ -n ${REMOTE} ]; then
+if [ -n "${REMOTE}" ]; then
     git cms-remote add ${REMOTE}
     git fetch ${REMOTE}
 fi
-
-# go to release
-[ "$CMSSW_BASE" ] && cd $CMSSW_BASE/src
 
 # download modified subpackages
 git diff ${COMMITS} --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
 
 # cherry-pick with user arguments
+
 if [ -n ${REMOTE} ]; then
-    git cherry-pick ${COMMITS} ${@:4}
+    git cherry-pick ${COMMITS} ${OPTIONS[@]:3}
 else
-    git cherry-pick ${COMMITS} ${@:2}
+    git cherry-pick ${COMMITS} ${OPTIONS[@]:1}
 fi
