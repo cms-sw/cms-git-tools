@@ -46,4 +46,4 @@ fi
 git diff ${COMMITS} --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
 
 # cherry-pick with user arguments
-git cherry-pick ${COMMITS} ${OPTIONS[@]}
+git cherry-pick ${COMMITS} "${OPTIONS[@]}"
