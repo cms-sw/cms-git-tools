@@ -2,7 +2,7 @@
 
 function usage() {
   cat <<@EOF
-Usage: git cms-cherry-pick <commit1>[..<commit2>]
+Usage: git cms-cherry-pick <commit1>[..<commit2>] [--remote <remote>] [<cherry-pick optional arguments>]
 
 Description:
   Cherry pick commit(s), ensuring modified subpackages are added before the commits are applied.
@@ -14,9 +14,28 @@ Description:
 COMMITS=${1}
 [ "$COMMITS" ] || usage 1
 
-# FIXME add repository where commits to be cherry-picked can be found?
-# git cms-remote add <remote>
-# git fetch <remote>
+REMOTE=""
+
+while [[ $# -gt 0 ]]; do
+    shift; # start after the commit argument
+    key=${1} 
+    case $key in
+	-h|--help)
+	    usage 1
+	    exit 1
+	    ;;
+	-r|--remote)
+	    REMOTE=${2}
+	    shift; shift;
+	    ;;
+    esac
+done
+
+# add repository where commits to be cherry-picked can be found
+if [ -n ${REMOTE} ]; then
+    git cms-remote add ${REMOTE}
+    git fetch ${REMOTE}
+fi
 
 # go to release
 [ "$CMSSW_BASE" ] && cd $CMSSW_BASE/src
@@ -25,4 +44,8 @@ COMMITS=${1}
 git diff ${COMMITS} --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
 
 # cherry-pick with user arguments
-git cherry-pick ${COMMITS} ${@:2}
+if [ -n ${REMOTE} ]; then
+    git cherry-pick ${COMMITS} ${@:4}
+else
+    git cherry-pick ${COMMITS} ${@:2}
+fi
