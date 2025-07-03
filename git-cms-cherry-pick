@@ -32,7 +32,7 @@ while [[ $# -gt 0 ]]; do
             REMOTE="$2"
             shift; shift;
             ;;
-        [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
+        [a-zA-Z0-9][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-]*)
             COMMITS="$1"
             shift
             ;;
