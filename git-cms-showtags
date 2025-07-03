@@ -7,7 +7,10 @@ exec ${python_cmd} $0 ${1+"$@"}
 """
 
 from optparse import OptionParser
-from commands import getstatusoutput
+try:
+  from commands import getstatusoutput
+except ImportError:
+  from subprocess import getstatusoutput
 from os import environ
 from os.path import join, exists
 from sys import exit

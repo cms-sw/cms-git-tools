@@ -1,5 +1,13 @@
-#!/usr/bin/env python
-from commands import getstatusoutput
+#!/bin/bash
+""":"
+python_cmd="python"
+python3 -V >/dev/null 2>&1 && python_cmd="python3"
+exec ${python_cmd} $0 ${1+"$@"}
+"""
+try:
+  from commands import getstatusoutput
+except ImportError:
+  from subprocess import getstatusoutput
 from optparse import OptionParser
 from sys import exit
 from os import environ, chdir
@@ -10,9 +18,9 @@ def format(s, **kwds):
   return s % kwds
 
 def die(s, verbose=None):
-  print s
+  print(s)
   if verbose:
-    print verbose
+    print(verbose)
   exit(1)
 
 def findSymbol(tag, package):
@@ -35,7 +43,7 @@ def findSymbol(tag, package):
   elif exists(join(cmssw_base, "src/.git", tagAttempt)):
     tag = tagAttempt
   else:
-    print branchAttempt
+    print(branchAttempt)
     die("Unable to find symbol %s for package %s." % (tag, realPackage))
   return tag
 
@@ -95,14 +103,14 @@ if __name__ == "__main__":
     err, output = getstatusoutput("git diff %s..%s" % (tags[0], tags[1]))
     if err:
       die("Could not create diff", output)
-    print output
+    print(output)
     exit(0)
   elif command == "tags":
     if len(args) == 1:
       parser.error("Please specify a package")
     err, output = getstatusoutput(format("git tag | grep -e '^%(package)s' | sed -e's/^%(package)s-//'", 
                                          package=package))
-    print output
+    print(output)
     exit(0)
   elif command == "import":
     tag = "master"
@@ -128,4 +136,4 @@ if __name__ == "__main__":
     err, output = getstatusoutput("git log refs/remotes/%s/%s" % (package, tag))
     if err:
       die("Error while doing git log", output)
-    print output
+    print(output)
