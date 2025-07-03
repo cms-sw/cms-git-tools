@@ -6,9 +6,14 @@ Usage: git cms-cherry-pick <commit1>[..<commit2>] [--remote <remote>] [<cherry-p
 
 Description:
   Cherry pick commit(s), ensuring modified subpackages are added before the commits are applied.
+  The remote containing the commit(s) can be specified if not already present locally.  
 @EOF
   exit $1
 }
+
+# disambiguate the first argument when the user
+# requests help instead of specifying a commit
+[[ "${1}" = "-h" || "${1}" = "--help" ]] && usage 0
 
 # mandatory commit(s) to cherry-pick
 COMMITS=${1}
