@@ -60,3 +60,6 @@ git diff "$COMMITS" --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r
 
 # cherry-pick with user arguments
 git cherry-pick "$COMMITS" "${OPTIONS[@]}"
+
+# check dependencies
+git cms-checkdeps -Aa
