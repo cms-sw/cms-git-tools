@@ -1,0 +1,65 @@
+#!/bin/bash -e
+
+function usage() {
+  cat <<@EOF
+Usage: git cms-cherry-pick <commit1>[..<commit2>] [--remote <remote>] [<cherry-pick optional arguments>]
+
+Description:
+  Cherry pick commit(s), ensuring modified subpackages are added before the commits are applied.
+  The remote containing the commit(s) can be specified if not already present locally.
+@EOF
+  exit $1
+}
+
+# disambiguate the first argument when the user
+# requests help instead of specifying a commit
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+  usage 0
+fi
+
+# Initialize variables
+COMMITS=""
+REMOTE=""
+OPTIONS=()
+
+# Iterate through all arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage 1
+            ;;
+        -r|--remote)
+            REMOTE="$2"
+            shift; shift;
+            ;;
+        [a-zA-Z0-9][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-]*)
+            COMMITS="$1"
+            shift
+            ;;
+        *)
+            OPTIONS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# mandatory commit(s) to cherry-pick
+[ "$COMMITS" ] || usage 1
+
+# go to release
+[ "$CMSSW_BASE" ] && cd "$CMSSW_BASE/src"
+
+# add repository where commits to be cherry-picked can be found
+if [ -n "$REMOTE" ]; then
+    git cms-remote add "$REMOTE"
+    git fetch "$REMOTE"
+fi
+
+# download modified subpackages
+git diff "$COMMITS" --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
+
+# cherry-pick with user arguments
+git cherry-pick "$COMMITS" "${OPTIONS[@]}"
+
+# check dependencies
+git cms-checkdeps -Aa
