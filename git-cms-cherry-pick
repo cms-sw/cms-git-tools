@@ -2,7 +2,7 @@
 
 function usage() {
   cat <<@EOF
-Usage: git cms-cherry-pick <commit1>[..<commit2>] [--remote <remote>] [<cherry-pick optional arguments>]
+Usage: git cms-cherry-pick <commit1>[..<commit2>] [--remote <remote>] [--create <branch>] [<cherry-pick optional arguments>]
 
 Description:
   Cherry pick commit(s), ensuring modified subpackages are added before the commits are applied.
@@ -32,6 +32,10 @@ while [[ $# -gt 0 ]]; do
             REMOTE="$2"
             shift; shift;
             ;;
+        -c|--create)
+            BRANCH="$2"
+            shift; shift;
+            ;;
         [a-zA-Z0-9][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-]*)
             COMMITS="$1"
             shift
@@ -53,6 +57,11 @@ done
 if [ -n "$REMOTE" ]; then
     git cms-remote add "$REMOTE"
     git fetch "$REMOTE"
+fi
+
+# move to a new branch
+if [ -n "$BRANCH" ]; then
+    git switch -c "$BRANCH"
 fi
 
 # download modified subpackages
