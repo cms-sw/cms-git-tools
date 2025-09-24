@@ -64,11 +64,26 @@ if [ -n "$REMOTE" ]; then
     git fetch "$REMOTE"
 fi
 
-# create a new branch before cherry-picking
+# check for erroneous flag duplication
 if [ -n "$BRANCH" ] && [ -n "$FORCE_BRANCH" ]; then
     echo "fatal: options '-c' and '-C' cannot be used together"
     exit 1
 fi
+
+# create trap to delete new branches if anything fails
+function branch_cleanup() {
+    if [ -n "$BRANCH" ] || [ -n "$FORCE_BRANCH" ] ; then
+        git switch -  # Switch back to the previous branch
+	if [ -n "$BRANCH" ] ; then
+            git branch -D "$BRANCH" 2>/dev/null || true
+	elif [ -n "$FORCE_BRANCH" ] ; then
+	    git branch -D "$FORCE_BRANCH" 2>/dev/null || true
+	fi
+    fi
+}
+trap branch_cleanup ERR
+
+# create a new branch before cherry-picking
 if [ -n "$BRANCH" ]; then
     git switch -c "$BRANCH"
 elif [ -n "$FORCE_BRANCH" ]; then
@@ -83,3 +98,6 @@ git cherry-pick "$COMMITS" "${OPTIONS[@]}"
 
 # check dependencies
 git cms-checkdeps -Aa
+
+# remove the trap if everything succeeds
+trap - ERR  
