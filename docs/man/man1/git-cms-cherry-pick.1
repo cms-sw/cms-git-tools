@@ -5,6 +5,7 @@
 git-cms-cherry-pick - CMSSW helper to download modified subpackages before applied commits from a cherry-pick.
 Either a single commit or a range of commits can be passed (equivalently branch names), following the standard `git cherry-pick` command.
 The remote containing the commit(s) can be specified if not already present locally. If specified, the remote will be added and fetched.
+A new branch can also be specified, created before the cherry-pick operation. If not specified, the cherry-pick will be performed in the current branch.
   
 .SH SYNOPSIS
 
@@ -17,3 +18,9 @@ The remote containing the commit(s) can be specified if not already present loca
 -r, --remote
 
 add the remote containing the commits to be cherry-picked
+
+.TP 5
+
+-c, --create
+
+create new branch before performing the cherry-pick operation

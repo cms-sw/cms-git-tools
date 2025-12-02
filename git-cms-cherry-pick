@@ -2,11 +2,12 @@
 
 function usage() {
   cat <<@EOF
-Usage: git cms-cherry-pick <commit1>[..<commit2>] [--remote <remote>] [<cherry-pick optional arguments>]
+Usage: git cms-cherry-pick <commit1>[..<commit2>] [-r|--remote <remote>] [(-c|--create)|(-C|--force-create) <branch>] [<cherry-pick optional arguments>]
 
 Description:
   Cherry pick commit(s), ensuring modified subpackages are added before the commits are applied.
   The remote containing the commit(s) can be specified if not already present locally.
+  A new branch can be created before the cherry-picking takes place.
 @EOF
   exit $1
 }
@@ -32,6 +33,14 @@ while [[ $# -gt 0 ]]; do
             REMOTE="$2"
             shift; shift;
             ;;
+        -c|--create)
+            BRANCH="$2"
+            shift; shift;
+            ;;
+        -C|--force-create)
+            FORCE_BRANCH="$2"
+            shift; shift;
+            ;;
         [a-zA-Z0-9][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-][a-zA-Z0-9\/\.\-]*)
             COMMITS="$1"
             shift
@@ -55,6 +64,32 @@ if [ -n "$REMOTE" ]; then
     git fetch "$REMOTE"
 fi
 
+# check for erroneous flag duplication
+if [ -n "$BRANCH" ] && [ -n "$FORCE_BRANCH" ]; then
+    echo "fatal: options '-c' and '-C' cannot be used together"
+    exit 1
+fi
+
+# create trap to delete new branches if anything fails
+function branch_cleanup() {
+    if [ -n "$BRANCH" ] || [ -n "$FORCE_BRANCH" ] ; then
+        git switch -  # Switch back to the previous branch
+	if [ -n "$BRANCH" ] ; then
+            git branch -D "$BRANCH" 2>/dev/null || true
+	elif [ -n "$FORCE_BRANCH" ] ; then
+	    git branch -D "$FORCE_BRANCH" 2>/dev/null || true
+	fi
+    fi
+}
+trap branch_cleanup ERR
+
+# create a new branch before cherry-picking
+if [ -n "$BRANCH" ]; then
+    git switch -c "$BRANCH"
+elif [ -n "$FORCE_BRANCH" ]; then
+    git switch -C "$FORCE_BRANCH"
+fi
+
 # download modified subpackages
 git diff "$COMMITS" --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
 
@@ -63,3 +98,6 @@ git cherry-pick "$COMMITS" "${OPTIONS[@]}"
 
 # check dependencies
 git cms-checkdeps -Aa
+
+# remove the trap if everything succeeds
+trap - ERR  
