@@ -433,7 +433,7 @@ if ! $UPSTREAM_ONLY && ! git remote | grep my-cmssw -q; then
       verbose "    select the option to fork the repository under your username ($RED$GITHUB_USERNAME$NORMAL)"
       verbose ""
       USER_CMSSW_REPO=""
-    elif ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/users/$GITHUB_USERNAME/repos" | tee >(cat >&${debug}) | grep -q '"name": *"cmssw"'; then
+    elif ! curl -L -s $PROXY -H "Authorization: token $OAUTH_TOKEN" "https://api.github.com/repos/$GITHUB_USERNAME/cmssw" | tee >(cat >&${debug}) | grep -q '"full_name": *"[^"/]*/cmssw"'; then
       verbose "You don't seem to have a personal repository, or your GitHub username ($RED$GITHUB_USERNAME$NORMAL) is not correct."
       verbose "You can work locally, but you will not be able to push your changes to GitHub for inclusion "
       verbose "in the official CMSSW distribution."
