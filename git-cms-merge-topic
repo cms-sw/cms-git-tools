@@ -284,6 +284,8 @@ else
   # Fetch the branch specified from github and replace merge-attempt with it. 
   # The + is used to force the merge-attempt branch to be updated.
   git fetch -n $REPOSITORY +$COMMIT:$FULL_BRANCH
+  # Avoid ambiguities when branches with the same name exist in several forks
+  FULL_BRANCH_REF="refs/remotes/$FULL_BRANCH"
   # Save the name of the current branch.
   CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
   # Attempt a merge in a separate branch
@@ -294,21 +296,21 @@ if [ -n "$OLD_BASE" ]; then
 else
   MERGE_BASE_BRANCH=$CURRENT_BRANCH
 fi
-MERGE_BASE=`git merge-base $FULL_BRANCH $MERGE_BASE_BRANCH`
+MERGE_BASE=`git merge-base $FULL_BRANCH_REF $MERGE_BASE_BRANCH`
 if [ "$BRANCH_DEFAULTED" != "true" ]; then
-  git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $FULL_BRANCH
+  git cms-sparse-checkout $DEBUG_OPT $MERGE_BASE $FULL_BRANCH_REF
   git read-tree -mu HEAD
 fi
 
 # optional backup (not for checkout-topic)
 if [ "$BACKUP" = "true" ] && [ "$COMMAND_NAME" != "cms-checkout-topic" ]; then
-  git branch -f ${LOCAL_BRANCH}${BACKUP_NAME} $FULL_BRANCH
+  git branch -f ${LOCAL_BRANCH}${BACKUP_NAME} $FULL_BRANCH_REF
 fi
 
 # in no-merge case, just checkout a new branch
 if [ "$NOMERGE" = "true" ]; then
   if [ "$BRANCH_DEFAULTED" != "true" ]; then
-    git checkout -B $LOCAL_BRANCH $FULL_BRANCH
+    git checkout -B $LOCAL_BRANCH $FULL_BRANCH_REF
     echo "Created branch $LOCAL_BRANCH to follow $BRANCH from repository $GITHUB_USER"
   fi
   # now try a rebase if desired
@@ -330,7 +332,7 @@ if [ "$NOMERGE" = "true" ]; then
     #   then selects lines matching: any number of spaces + "Co-authored-by: " (which is then removed)
     #   i = case-insensitive, p = print
     # finally, sort removes duplicates, and grep removes the current user (who will already be the author of the squash commit)
-    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH --format="Co-Authored-by: %an <%ae>%n%B" | sed -n 's/^ *Co-authored-by: //ip' | sort -u | grep -v "$SQUASH_AUTHOR")
+    readarray -t COAUTHORS < <(git log $MERGE_BASE_BRANCH..$FULL_BRANCH_REF --format="Co-Authored-by: %an <%ae>%n%B" | sed -n 's/^ *Co-authored-by: //ip' | sort -u | grep -v "$SQUASH_AUTHOR")
     # by default, automatically populate commit message
     git reset --hard $MERGE_BASE
     git merge --squash "HEAD@{1}"
