@@ -91,7 +91,13 @@ elif [ -n "$FORCE_BRANCH" ]; then
 fi
 
 # download modified subpackages
-git diff "$COMMITS" --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
+if [[ "$COMMITS" == *..* ]]; then
+  DIFF_RANGE="$COMMITS"
+else
+  # single commit: diff against its (mainline) parent only
+  DIFF_RANGE="${COMMITS}^..${COMMITS}" 
+fi
+git diff "$DIFF_RANGE" --name-only --no-renames | cut -d/ -f-2 | sort -u | xargs -r git cms-addpkg
 
 # cherry-pick with user arguments
 git cherry-pick "$COMMITS" "${OPTIONS[@]}"
@@ -100,4 +106,4 @@ git cherry-pick "$COMMITS" "${OPTIONS[@]}"
 git cms-checkdeps -Aa
 
 # remove the trap if everything succeeds
-trap - ERR  
+trap - ERR
